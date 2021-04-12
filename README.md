@@ -6,10 +6,13 @@ A simple unofficial iResNet library that intend to make iResNet easy to use.
 | pytorch                      | iResNetLab                     |
 | ---------------------------- | ------------------------------ |
 | `nn.Linear(dim_in, dim_out)` | `iResNet.FCN(dim_in, dim_out)` |
-| `nn.Conv1d(channel_in, channel_out, kernel_size)`| `iResNet.Conv1d(channel_in, channel_out, kernel_size)`|
+| `nn.Conv1d(channel_in, channel_out, kernel_size)`| `iResNet.Conv1d(channel, kernel_size)`|
 | `nn.Sequential(*modules)`    | `iResNet.Sequential(*modules)` |
 
 ## Fully connected layers
+
+![](https://img.shields.io/static/v1?label=Inverse test&message=Pass&color=green)
+![](https://img.shields.io/static/v1?label=Distribution test&message=Working&color=brown)
 
 Define a fully connected i-ResNet:
 
@@ -54,6 +57,9 @@ The `log_det_J` is the log(det J) from previous layers. They both be 0 by defaul
 
 ## Sequential
 
+![](https://img.shields.io/static/v1?label=Inverse test&message=Pass&color=green)
+![](https://img.shields.io/static/v1?label=Distribution test&message=Working&color=brown)
+
 Defining a sequential of FCN i-ResNet:
 
 ```python
@@ -86,6 +92,9 @@ It must contains following methods:
 2. `self.forward(x, log_p0, log_det_J0) --> y, log_p, log_det_J`: a forward method
 
 ## 1D Convolutional Network
+
+![](https://img.shields.io/static/v1?label=Inverse test&message=Pass&color=green)
+![](https://img.shields.io/static/v1?label=Distribution test&message=Working&color=brown)
 
 Set model:
 
