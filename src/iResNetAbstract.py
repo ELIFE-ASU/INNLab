@@ -100,6 +100,7 @@ class Conv(iResNetModule):
         return x, 0
     
     def logdet(self, x, g):
+        batch = x.shape[0]
         self.eval()
         logdet = 0
         for i in range(self.num_iter):
@@ -108,8 +109,9 @@ class Conv(iResNetModule):
             w = v
             for k in range(1, self.num_n):
                 w = vjp(g, x, w)[0]
-                logdet += (-1)**(k+1) * torch.sum(w * v, dim=-1) / k
+                logdet += (-1)**(k+1) * (w * v) / k # groug at the batch level
         
+        logdet = logdet.reshape(batch, -1).sum(-1)
         logdet /= self.num_iter
         self.train()
         return logdet

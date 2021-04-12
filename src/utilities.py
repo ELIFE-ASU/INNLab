@@ -106,7 +106,22 @@ class NormalDistribution(nn.Module):
         super(NormalDistribution, self).__init__()
     
     def logp(self, x):
-        return torch.sum(-1 * (x ** 2), dim=-1)
+        logps = -1 * (x ** 2)
+
+        if len(x.shape) == 1:
+            # linear layer
+            raise Exception(f'The input must have a batch dimension, but got dim={x.shape}.')
+        if len(x.shape) == 2:
+            # [batch, dim]
+            return logps.sum(dim=-1)
+        if len(x.shape) == 3:
+            # [batch, channel, dim_1d], 1d conv
+            return logps.reshape(x.shape[0], -1).sum(dim=-1)
+        if len(x.shape) == 4:
+            # [batch, channel, dim_x, dim_y], 2d conv
+            return logps.reshape(x.shape[0], -1).sum(dim=-1)
+        
+        raise Exception(f'The input dimension should be 1,2,3, or 4, but got {len(x.shape)}.')
     
     def sample(self, shape):
         return torch.randn(shape)
