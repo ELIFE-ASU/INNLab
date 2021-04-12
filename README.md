@@ -10,10 +10,16 @@ A simple unofficial iResNet library that intend to make iResNet easy to use.
 
 ## Fully connected layers
 
+Define a fully connected i-ResNet:
+
 ```python
 model = iResNet.FCN(2, 2)
 model.train()
+```
 
+Forward computing:
+
+```python
 # input data
 x = torch.Tensor([[1,2],
                   [3,4]])
@@ -21,21 +27,22 @@ x.requires_grad = True # x must requires gradient
 
 # forward
 y, p, logdet = model(x)
-
+# output:
 >>> y = tensor([[1.3179, 2.2021],
 >>>             [3.3864, 4.2015]], grad_fn=<SliceBackward>)
 >>> p = tensor([0., 0.], grad_fn=<AddBackward0>)
 >>> logdet = tensor([0.0153, 0.1178], grad_fn=<AddBackward0>)
+```
 
+Inverse process:
 
+```python
 # inverse
 model.inverse(y.detach())
-
+# output:
 >>> output:
 >>> tensor([[1., 2.],
 >>>         [3., 4.]])
-
-
 ```
 
 The `iResNet.FCN` provides a i-ResNet block that has the form of `model(x, log_p0, log_det_J0) --> y, log_p, log_det_J`.
@@ -46,12 +53,18 @@ The `log_det_J` is the log(det J) from previous layers. They both be 0 by defaul
 
 ## Sequential
 
+Defining a sequential of FCN i-ResNet:
+
 ```python
 model = iResNet.Sequential(iResNet.FCN(2, 2),
                            iResNet.FCN(2, 2),
                            iResNet.FCN(2, 2))
 model.train()
+```
 
+Forward and inverse process:
+
+```python
 # input data
 x = torch.Tensor([[1,2],
                   [3,4]])
@@ -59,7 +72,7 @@ x.requires_grad = True
 y, p, logdet = model(x)
 
 model.inverse(y.detach())
-
+# output:
 >>> output:
 >>> tensor([[1., 2.],
 >>>         [3., 4.]])
