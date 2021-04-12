@@ -2,13 +2,15 @@ import torch
 import torch.nn as nn
 from torch.nn.utils import spectral_norm
 
+# compute v.Jacobian, source: https://github.com/jarrelscy/iResnet
 def vjp(ys, xs, v):
     vJ = torch.autograd.grad(ys, xs, grad_outputs=v, create_graph=True, retain_graph=True, allow_unused=True)
     return tuple([j for j in vJ])
 
+
 class SNFCN(nn.Module):
     '''
-    spectral normalized g function
+    spectral normalized fully connected function
     '''
     def __init__(self, dim, w=8, k=0.8, batch_norm=False):
         super(SNFCN, self).__init__()
