@@ -9,7 +9,46 @@ A simple unofficial iResNet library that intend to make iResNet easy to use.
 | `nn.Sequential`              | `iResNet.Sequential`           |
 
 ## Fully connected layers
-`iResNet.FCN(dim_in, dim_out)`
+
+```python
+model = iResNet.FCN(2, 2)
+
+'''
+FCN(
+  (net): SNFCN(
+    (g): Sequential(
+      (0): Linear(in_features=2, out_features=16, bias=True)
+      (1): GELU()
+      (2): Linear(in_features=16, out_features=16, bias=True)
+      (3): GELU()
+      (4): Linear(in_features=16, out_features=2, bias=True)
+    )
+  )
+  (noise): NormalDistribution()
+)
+'''
+x = torch.Tensor([[1,2],
+                  [3,4]])
+x.requires_grad = True # x must requires gradient
+model.train()
+
+y, p, logdet = model(x)
+'''
+outputs:
+y = tensor([[1.3179, 2.2021],
+            [3.3864, 4.2015]], grad_fn=<SliceBackward>)
+p = tensor([0., 0.], grad_fn=<AddBackward0>)
+logdet = tensor([0.0153, 0.1178], grad_fn=<AddBackward0>)
+'''
+
+model.inverse(y.detach())
+'''
+output:
+tensor([[1., 2.],
+        [3., 4.]])
+'''
+
+```
 
 The `iResNet.FCN` provides a i-ResNet block that has the form of `model(x, log_p0, log_det_J0) --> y, log_p, log_det_J`.
 The input not only have the feature `x`, but also have the `log_p0` and `log_det_J0`.
