@@ -45,7 +45,25 @@ The `log_p0` is the log probability inherited from previous abandoned features.
 The `log_det_J` is the log(det J) from previous layers. They both be 0 by default.
 
 ## Sequential
-`iResNet.Sequential`
+
+```python
+model = iResNet.Sequential(iResNet.FCN(2, 2),
+                           iResNet.FCN(2, 2),
+                           iResNet.FCN(2, 2))
+model.train()
+
+# input data
+x = torch.Tensor([[1,2],
+                  [3,4]])
+x.requires_grad = True
+y, p, logdet = model(x)
+
+model.inverse(y.detach())
+
+>>> output:
+>>> tensor([[1., 2.],
+>>>         [3., 4.]])
+```
 
 The modules for `iResNet.Sequential` must have this form: `model(x, log_p0, log_det_J0) --> y, log_p, log_det_J`. 
 It must contains following methods:
