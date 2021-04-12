@@ -17,9 +17,11 @@ class iResNetModule(nn.Module):
         super(iResNetModule, self).__init__()
     
     def g(self, x):
+        # The g function in ResNet, y = x + g(x)
         pass
 
     def logdet(self, x, g):
+        # Compute log(det J)
         pass
 
     def P(self, y):
@@ -36,25 +38,28 @@ class iResNetModule(nn.Module):
     
     def forward(self, x, log_p0=0, log_det_J_=0):
         if self.training:
-            # if in the training mode, we need to
-            # compute log(det(J))
+            # if in the training mode, we need to compute log(det(J))
+
+            # ResNet: y = x + g(x)
             g = self.g(x)
             y = x + g
-            y, z = self.cut(y) # resize y
+            # Resize if dim_out < dim_in
+            y, z = self.cut(y) # split y in to output y' and abandoned information z
             
-            log_det_J = log_det_J_ + self.logdet(x, g)
-            log_p = log_p0 + self.P(z)
-            
+            # compute Jacobian and probability
+            log_det_J = log_det_J_ + self.logdet(x, g) # compute log(det|J_i|) and inherit log(det|J_{i-1}|)
+            log_p = log_p0 + self.P(z) # compute probability of z, and inherit log(p_0)
+            return y, log_p, log_det_J
+
         else:
             y = x + self.g(x)
             y, z = self.cut(y)
             return y
-        
-        return y, log_p, log_det_J
     
     def inverse(self, y, num_iter=100):
         '''
-        From y to x
+        The inverse process from y to x
+        If dim_in > dim_out, this process will inject noise to the input.
         '''
         orginal_state = self.training
 
