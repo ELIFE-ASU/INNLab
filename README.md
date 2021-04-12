@@ -6,7 +6,7 @@ A simple unofficial iResNet library that intend to make iResNet easy to use.
 | pytorch                      | iResNetLab                     |
 | ---------------------------- | ------------------------------ |
 | `nn.Linear(dim_in, dim_out)` | `iResNet.FCN(dim_in, dim_out)` |
-| `nn.Sequential`              | `iResNet.Sequential`           |
+| `nn.Sequential(*modules)`    | `iResNet.Sequential(*modules)` |
 
 ## Fully connected layers
 
@@ -26,11 +26,11 @@ x = torch.Tensor([[1,2],
 x.requires_grad = True # x must requires gradient
 
 # forward
-y, p, logdet = model(x)
+y, logp, logdet = model(x)
 # output:
 >>> y = tensor([[1.3179, 2.2021],
 >>>             [3.3864, 4.2015]], grad_fn=<SliceBackward>)
->>> p = tensor([0., 0.], grad_fn=<AddBackward0>)
+>>> logp = tensor([0., 0.], grad_fn=<AddBackward0>)
 >>> logdet = tensor([0.0153, 0.1178], grad_fn=<AddBackward0>)
 ```
 
@@ -69,7 +69,7 @@ Forward and inverse process:
 x = torch.Tensor([[1,2],
                   [3,4]])
 x.requires_grad = True
-y, p, logdet = model(x)
+y, logp, logdet = model(x)
 
 model.inverse(y.detach())
 # output:
