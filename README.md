@@ -6,6 +6,7 @@ A simple unofficial iResNet library that intend to make iResNet easy to use.
 | pytorch                      | iResNetLab                     |
 | ---------------------------- | ------------------------------ |
 | `nn.Linear(dim_in, dim_out)` | `iResNet.FCN(dim_in, dim_out)` |
+| `nn.Conv1d(channel_in, channel_out, kernel_size)`| `iResNet.Conv1d(channel_in, channel_out, kernel_size)`|
 | `nn.Sequential(*modules)`    | `iResNet.Sequential(*modules)` |
 
 ## Fully connected layers
@@ -86,7 +87,35 @@ It must contains following methods:
 
 ## 1D Convolutional Network
 
-> working
+Set model:
+
+```python
+model = iResNet.Sequential(iResNet.Conv1d(channel=2, kernel_size=3),
+                           iResNet.Conv1d(channel=2, kernel_size=1),
+                           iResNet.Conv1d(channel=2, kernel_size=3))
+```
+
+Set input, and compute the forward:
+
+```python
+x = torch.Tensor([[[1,2,3,4,5],[-1,-2,-3,-4,-5]], [[1,2,0,4,5],[-1,-2,0,-4,-5]]])
+x.requires_grad = True
+
+y, logp, logdet = model(x)
+```
+
+Inverse:
+
+```python
+model.inverse(y)
+
+# output:
+>>> tensor([[[ 1.0000e+00,  2.0000e+00,  3.0000e+00,  4.0000e+00,  5.0000e+00],
+>>>          [-1.0000e+00, -2.0000e+00, -3.0000e+00, -4.0000e+00, -5.0000e+00]],
+>>> 
+>>>         [[ 1.0000e+00,  2.0000e+00, -1.4901e-08,  4.0000e+00,  5.0000e+00],
+>>>          [-1.0000e+00, -2.0000e+00, -7.4506e-09, -4.0000e+00, -5.0000e+00]]])
+```
 
 ## 2D Convolutional Network
 

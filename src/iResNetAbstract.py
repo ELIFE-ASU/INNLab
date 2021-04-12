@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from utilities import vjp
 
 # i-ResNet Modules
 
@@ -69,3 +70,46 @@ class iResNetModule(nn.Module):
         
         self.train(orginal_state)
         return x
+
+
+class Conv(iResNetModule):
+    '''
+    1-d convolutional i-ResNet
+    '''
+    def __init__(self, num_iter=1, num_n=3):
+        super(Conv, self).__init__()
+        
+        self.num_iter = num_iter
+        self.num_n = num_n
+        
+        self.net = nn.Sequential()
+    
+    def g(self, x):
+        return self.net(x)
+    
+    def P(self, y):
+        '''
+        Normal distribution
+        '''
+        return 0
+    
+    def inject_noise(self, y):
+        return y
+    
+    def cut(self, x):
+        return x, 0
+    
+    def logdet(self, x, g):
+        self.eval()
+        logdet = 0
+        for i in range(self.num_iter):
+            v = torch.randn(x.shape) # random noise
+            v = v.to(x.device)
+            w = v
+            for k in range(1, self.num_n):
+                w = vjp(g, x, w)[0]
+                logdet += (-1)**(k+1) * torch.sum(w * v, dim=-1) / k
+        
+        logdet /= self.num_iter
+        self.train()
+        return logdet
