@@ -128,4 +128,7 @@ model.inverse(y)
 
 ## 2D Convolutional Network
 
-> working
+![](https://img.shields.io/static/v1?label=Inverse+test&message=Pass&color=green)
+![](https://img.shields.io/static/v1?label=Distribution+test&message=Working&color=brown)
+
+![](./images/cov2d_x.png) ![](./images/cov2d_y.png) ![](./images/cov2d_x_hat.png)

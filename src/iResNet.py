@@ -102,6 +102,16 @@ class Conv1d(iResNetAbstract.Conv):
         self.net = utilities.SNCov1d(channel, kernel_size, w=w, k=k)
 
 
+class Conv2d(iResNetAbstract.Conv):
+    '''
+    1-d convolutional i-ResNet
+    '''
+    def __init__(self, channel, kernel_size, w=8, k=0.8, num_iter=1, num_n=3):
+        super(Conv2d, self).__init__(num_iter=num_iter, num_n=num_n)
+        
+        self.net = utilities.SNCov2d(channel, kernel_size, w=w, k=k)
+
+
 class Sequential(nn.Sequential):
 
     def __init__(self, *args):
