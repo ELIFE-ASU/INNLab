@@ -3,6 +3,8 @@ A simple unofficial iResNet library that intend to make iResNet easy to use.
 
 # Analogy to `torch.nn`
 
-## `nn.Linear(dim_in, dim_out)` --> `iResNet.iResNetFCN(dim_in, dim_out)`
+## Fully connected layers
+`nn.Linear(dim_in, dim_out)` --> `iResNet.iResNetFCN(dim_in, dim_out)`
 
-## `nn.Sequential` --> `iResNet.Sequential`
+## Sequential
+`nn.Sequential` --> `iResNet.Sequential`
