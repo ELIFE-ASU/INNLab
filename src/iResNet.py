@@ -16,7 +16,7 @@ importlib.reload(utilities)
 
 iResNetModule = iResNetAbstract.iResNetModule
 
-class iResNetFCN(iResNetModule):
+class FCN(iResNetModule):
     '''
     i-ResNet which g is a fully connected network
     '''
@@ -25,7 +25,7 @@ class iResNetFCN(iResNetModule):
         beta: the Lip constant, beta < 1
         w: the width of the hidden layer
         '''
-        super(iResNetFCN, self).__init__()
+        super(FCN, self).__init__()
         if dim_out > dim_in:
             raise Exception(f"dim_out ({dim_out}) cannnot be larger than dim_in ({dim_in}).")
         
