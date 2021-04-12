@@ -7,6 +7,7 @@ A simple unofficial iResNet library that intend to make iResNet easy to use.
 | ---------------------------- | ------------------------------ |
 | `nn.Linear(dim_in, dim_out)` | `iResNet.FCN(dim_in, dim_out)` |
 | `nn.Conv1d(channel_in, channel_out, kernel_size)`| `iResNet.Conv1d(channel, kernel_size)`|
+| `nn.Conv2d(channel_in, channel_out, kernel_size)`| `iResNet.Conv2d(channel, kernel_size)`|
 | `nn.Sequential(*modules)`    | `iResNet.Sequential(*modules)` |
 
 ## Fully connected layers
@@ -131,4 +132,41 @@ model.inverse(y)
 ![](https://img.shields.io/static/v1?label=Inverse+test&message=Pass&color=green)
 ![](https://img.shields.io/static/v1?label=Distribution+test&message=Working&color=brown)
 
-![](./images/cov2d_x.png) ![](./images/cov2d_y.png) ![](./images/cov2d_x_hat.png)
+![](./images/cov2d.png)
+> The forward and inverse process for a simple image
+
+Set a model:
+
+```python
+model = iResNet.Sequential(iResNet.Conv2d(channel=2, kernel_size=3),
+                           iResNet.Conv2d(channel=2, kernel_size=3),
+                           iResNet.Conv2d(channel=2, kernel_size=3),
+                           iResNet.Conv2d(channel=2, kernel_size=3),
+                           iResNet.Conv2d(channel=2, kernel_size=3),
+                           iResNet.Conv2d(channel=2, kernel_size=3)
+                          )
+```
+
+Forward process:
+
+```python
+x = torch.Tensor([[[[1,1,1],[0,1,0],[0,1,0]], [[0,1,0],[1,1,1],[0,1,0]]]])
+x.requires_grad = True
+
+y, logp, logdet = model(x)
+```
+
+Inverse Process:
+
+```python
+xhat = model.inverse(y)
+
+# output:
+>>> tensor([[[[ 1.0000e+00,  1.0000e+00,  1.0000e+00],
+>>>           [-8.9407e-08,  1.0000e+00, -3.5390e-08],
+>>>           [ 1.8626e-07,  1.0000e+00,  1.6391e-07]],
+>>> 
+>>>          [[ 7.4506e-08,  1.0000e+00,  2.9802e-08],
+>>>           [ 1.0000e+00,  1.0000e+00,  1.0000e+00],
+>>>           [ 7.4506e-09,  1.0000e+00,  1.4901e-08]]]])
+```
