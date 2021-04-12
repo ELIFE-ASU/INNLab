@@ -12,41 +12,29 @@ A simple unofficial iResNet library that intend to make iResNet easy to use.
 
 ```python
 model = iResNet.FCN(2, 2)
+model.train()
 
-'''
-FCN(
-  (net): SNFCN(
-    (g): Sequential(
-      (0): Linear(in_features=2, out_features=16, bias=True)
-      (1): GELU()
-      (2): Linear(in_features=16, out_features=16, bias=True)
-      (3): GELU()
-      (4): Linear(in_features=16, out_features=2, bias=True)
-    )
-  )
-  (noise): NormalDistribution()
-)
-'''
+# input data
 x = torch.Tensor([[1,2],
                   [3,4]])
 x.requires_grad = True # x must requires gradient
-model.train()
 
+# forward
 y, p, logdet = model(x)
-'''
-outputs:
-y = tensor([[1.3179, 2.2021],
-            [3.3864, 4.2015]], grad_fn=<SliceBackward>)
-p = tensor([0., 0.], grad_fn=<AddBackward0>)
-logdet = tensor([0.0153, 0.1178], grad_fn=<AddBackward0>)
-'''
 
+>>> y = tensor([[1.3179, 2.2021],
+>>>             [3.3864, 4.2015]], grad_fn=<SliceBackward>)
+>>> p = tensor([0., 0.], grad_fn=<AddBackward0>)
+>>> logdet = tensor([0.0153, 0.1178], grad_fn=<AddBackward0>)
+
+
+# inverse
 model.inverse(y.detach())
-'''
-output:
-tensor([[1., 2.],
-        [3., 4.]])
-'''
+
+>>> output:
+>>> tensor([[1., 2.],
+>>>         [3., 4.]])
+
 
 ```
 
