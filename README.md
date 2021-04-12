@@ -11,8 +11,8 @@ A simple unofficial iResNet library that intend to make iResNet easy to use.
 
 ## Fully connected layers
 
-![](https://img.shields.io/static/v1?label=Inverse test&message=Pass&color=green)
-![](https://img.shields.io/static/v1?label=Distribution test&message=Working&color=brown)
+![](https://img.shields.io/static/v1?label=Inverse+test&message=Pass&color=green)
+![](https://img.shields.io/static/v1?label=Distribution+test&message=Working&color=brown)
 
 Define a fully connected i-ResNet:
 
@@ -57,8 +57,8 @@ The `log_det_J` is the log(det J) from previous layers. They both be 0 by defaul
 
 ## Sequential
 
-![](https://img.shields.io/static/v1?label=Inverse test&message=Pass&color=green)
-![](https://img.shields.io/static/v1?label=Distribution test&message=Working&color=brown)
+![](https://img.shields.io/static/v1?label=Inverse+test&message=Pass&color=green)
+![](https://img.shields.io/static/v1?label=Distribution+test&message=Working&color=brown)
 
 Defining a sequential of FCN i-ResNet:
 
@@ -93,8 +93,8 @@ It must contains following methods:
 
 ## 1D Convolutional Network
 
-![](https://img.shields.io/static/v1?label=Inverse test&message=Pass&color=green)
-![](https://img.shields.io/static/v1?label=Distribution test&message=Working&color=brown)
+![](https://img.shields.io/static/v1?label=Inverse+test&message=Pass&color=green)
+![](https://img.shields.io/static/v1?label=Distribution+test&message=Working&color=brown)
 
 Set model:
 
