@@ -150,10 +150,18 @@ model = iResNet.Sequential(iResNet.Conv2d(channel=2, kernel_size=3),
 Forward process:
 
 ```python
-x = torch.Tensor([[[[1,1,1],[0,1,0],[0,1,0]], [[0,1,0],[1,1,1],[0,1,0]]]])
+x = torch.Tensor([[[[1,1,1],
+                    [0,1,0],
+                    [0,1,0]],
+
+                   [[0,1,0],
+                    [1,1,1],
+                    [0,1,0]]]])
 x.requires_grad = True
 
 y, logp, logdet = model(x)
+# output:
+>>> logdet = tensor([-3.7631], grad_fn=<AddBackward0>)
 ```
 
 Inverse Process:
@@ -170,3 +178,17 @@ xhat = model.inverse(y)
 >>>           [ 1.0000e+00,  1.0000e+00,  1.0000e+00],
 >>>           [ 7.4506e-09,  1.0000e+00,  1.4901e-08]]]])
 ```
+
+## Resize Layers for Convolutional Layers
+
+![](https://img.shields.io/static/v1?label=Code&message=Building&color=brown)
+
+* [PixelUnshuffle](https://pytorch.org/docs/stable/generated/torch.nn.PixelUnshuffle.html?highlight=pixelshuffle), [PixelShuffle](https://pytorch.org/docs/stable/generated/torch.nn.PixelShuffle.html?highlight=pixelshuffle#torch.nn.PixelShuffle)
+    * For 1-d version: [serkansulun/pytorch-pixelshuffle1d](https://github.com/serkansulun/pytorch-pixelshuffle1d)
+
+
+## Invertible 1x1 Convolution
+
+> reference: https://arxiv.org/pdf/1807.03039.pdf
+
+![](https://img.shields.io/static/v1?label=Code&message=Building&color=brown)
