@@ -1,6 +1,8 @@
 # iResNetLab
 A simple unofficial iResNet library that intend to make iResNet easy to use.
 
+> pytorch >= 1.8.1
+
 # Analogy to `torch.nn`
 
 | pytorch                      | iResNetLab                     |

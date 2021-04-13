@@ -136,3 +136,21 @@ class Sequential(nn.Sequential):
             y = module.inverse(y, num_iter=num_iter)
         
         return y
+
+
+class PixelShuffle2d(iResNetAbstract.PixelShuffleModule):
+    '''
+    2d invertible pixel shuffle, using the built-in method
+    from pytorch. (nn.PixelShuffle, and nn.PixelUnshuffle)
+    '''
+    def __init__(self, r):
+        super(PixelShuffle2d, self).__init__()
+        self.r = r
+        self.shuffle = nn.PixelShuffle(r)
+        self.unshuffle = nn.PixelUnshuffle(r)
+    
+    def PixelShuffle(self, x):
+        return self.shuffle(x)
+    
+    def PixelUnshuffle(self, x):
+        return self.unshuffle(x)

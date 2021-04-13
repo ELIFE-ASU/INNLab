@@ -115,3 +115,29 @@ class Conv(iResNetModule):
         logdet /= self.num_iter
         self.train()
         return logdet
+
+
+class PixelShuffleModule(nn.Module):
+    '''
+    Module for invertible pixel shuffle
+    > Pixel Shuffle: https://arxiv.org/abs/1609.05158
+
+    Override required:
+        PixelShuffle(self, x) --> x
+        PixelUnshuffle(self, x) --> x
+    '''
+    def __init__(self):
+        super(PixelShuffleModule, self).__init__()
+    
+    def PixelShuffle(self, x):
+        pass
+    
+    def PixelUnshuffle(self, x):
+        pass
+
+    def forward(self, x, log_p0, log_det_J):
+        # The log(p_0) and log|det J| will not change under this transformation
+        return self.PixelUnshuffle(x), log_p0, log_det_J
+    
+    def inverse(self, y, num_iter=100):
+        return self.PixelShuffle(y)
