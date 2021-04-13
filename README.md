@@ -1,4 +1,7 @@
 # iResNetLab
+
+![](https://img.shields.io/static/v1?label=pytorch&message=≥1.8.1&color=yellow)
+
 A simple unofficial iResNet library that intend to make iResNet easy to use.
 
 > pytorch >= 1.8.1
