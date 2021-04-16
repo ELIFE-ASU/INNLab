@@ -176,5 +176,5 @@ class BatchNorm1d(nn.BatchNorm1d):
     def inverse(self, y, num_iter=1):
         var = self.running_var + self.eps
         mean = self.running_mean
-        x = y * var + mean
+        x = y * torch.sqrt(var) + mean
         return x
