@@ -154,3 +154,27 @@ class PixelShuffle2d(iResNetAbstract.PixelShuffleModule):
     
     def PixelUnshuffle(self, x):
         return self.unshuffle(x)
+
+
+class BatchNorm1d(nn.BatchNorm1d):
+    def __init__(self, dim):
+        super(BatchNorm1d, self).__init__(num_features=dim, affine=False)
+
+    def forward(self, x, log_p=0, log_det_J=0):
+        if self.training:
+            var = torch.var(x, dim=0)
+
+            x = super(BatchNorm1d, self).forward(x)
+
+            log_det = -0.5 * torch.log(var + self.eps)
+            log_det = torch.sum(log_det, dim=-1)
+
+            return x, log_p, log_det_J + log_det
+        else:
+            return super(BatchNorm1d, self).forward(x)
+    
+    def inverse(self, y, num_iter=1):
+        var = self.running_var + self.eps
+        mean = self.running_mean
+        x = y * var + mean
+        return x

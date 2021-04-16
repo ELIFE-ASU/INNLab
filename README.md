@@ -188,7 +188,18 @@ xhat = model.inverse(y)
 
 * [PixelUnshuffle](https://pytorch.org/docs/stable/generated/torch.nn.PixelUnshuffle.html?highlight=pixelshuffle), [PixelShuffle](https://pytorch.org/docs/stable/generated/torch.nn.PixelShuffle.html?highlight=pixelshuffle#torch.nn.PixelShuffle)
     * For 1-d version: [serkansulun/pytorch-pixelshuffle1d](https://github.com/serkansulun/pytorch-pixelshuffle1d)
+    * https://arxiv.org/pdf/1609.05158.pdf
 
+
+> Related work: https://arxiv.org/pdf/2006.14200.pdf
+
+## Batch Normalization
+
+![](https://img.shields.io/static/v1?label=Inverse+test&message=Processing&color=brown)
+![](https://img.shields.io/static/v1?label=Distribution+test&message=Working&color=brown)
+![](https://img.shields.io/static/v1?label=Code&message=Testing&color=yellow)
+
+`iResNet.BatchNorm1d()`
 
 ## Invertible 1x1 Convolution
 
