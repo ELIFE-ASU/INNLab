@@ -206,3 +206,35 @@ xhat = model.inverse(y)
 > reference: https://arxiv.org/pdf/1807.03039.pdf
 
 ![](https://img.shields.io/static/v1?label=Code&message=Building&color=brown)
+
+## Real NVP
+
+`iResNet.RealNVP(dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1)`
+
+Parameters:
+
+* `dim`: dimension of the input/output;
+* `f_log_s`, `f_t`: function for s and t. If they are `None`, they will be generated automatically. The generated shape is determined by `k`;
+* `mask`: the mask for Real NVP. If it is `None`, a chessboard mask will be generated;
+* `clip`: Clipping the log(s) to `[-clip, clip]`, to avoid large numbers.
+
+Shape:
+
+* input: (\*, dim)
+* output: (\*, dim){output}, (\*){log(p)}, (\*){log(|det J|)}
+
+Example:
+
+```python
+model = iResNet.Sequential(iResNet.RealNVP(4),
+                           iResNet.RealNVP(4))
+
+x = torch.Tensor([[1,2,3,-1],
+                  [4,5,-6, 6]])
+
+y, log_p, logdet = model(x)
+model.inverse(y)
+
+>>> tensor([[ 1.0000,  2.0000,  3.0000, -1.0000],
+>>>         [ 4.0000,  5.0000, -6.0000,  6.0000]], grad_fn=<AddBackward0>)
+```

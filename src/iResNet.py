@@ -117,14 +117,14 @@ class Sequential(nn.Sequential):
     def __init__(self, *args):
         super(Sequential, self).__init__(*args)
     
-    def forward(self, x):
+    def forward(self, x, log_p0=0, log_det_J_=0):
         if self.training:
             logp = 0
             logdet = 0
 
             for module in self:
                 x, logp, logdet = module(x, logp, logdet)
-            return x, logp, logdet
+            return x, logp + log_p0, logdet + log_det_J_
         else:
             for module in self:
                 x = module(x)
@@ -178,3 +178,49 @@ class BatchNorm1d(nn.BatchNorm1d):
         mean = self.running_mean
         x = y * torch.sqrt(var) + mean
         return x
+
+class Linear(utilities.InvertibleLinear):
+    def __init__(self, dim):
+        super(Linear, self).__init__(dim)
+    
+    def forward(self, x, log_p0=0, log_det_J=0):
+        if len(x.shape) == 1:
+            log_det = self.logdet()
+        if len(x.shape) == 2:
+            # [batch, dim]
+            log_det = self.logdet().repeat(x.shape[0])
+        x = super(Linear, self).forward(x)
+
+        return x, log_p0, log_det_J + log_det
+    
+    def inverse(self, y, num_iter=1):
+        return super(Linear, self).inverse(y)
+
+
+class RealNVP(nn.Module):
+
+    def __init__(self, dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1):
+        super(RealNVP, self).__init__()
+        if (f_log_s is None) and (f_t is None):
+            log_s = self.sequential(dim, k)
+            t = self.sequential(dim, k)
+            self.net = utilities.combined_real_nvp(dim, log_s, t, mask, clip)
+        else:
+            self.net = utilities.combined_real_nvp(dim, f_log_s, f_t, mask, clip)
+    
+    def sequential(self, dim, k):
+        block = nn.Sequential(nn.Linear(dim, k * dim), nn.SELU(),
+                              nn.Linear(k * dim, k * dim), nn.SELU(),
+                              nn.Linear(k * dim, dim))
+        return block
+
+    def forward(self, x, log_p0=0, log_det_J_=0):
+        x, log_det = self.net(x)
+        if self.training:
+            return x, log_p0, log_det + log_det_J_
+        else:
+            return x
+    
+    def inverse(self, y, **args):
+        y = self.net.inverse(y)
+        return y
