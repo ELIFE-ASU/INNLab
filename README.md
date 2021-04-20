@@ -16,7 +16,7 @@ A simple unofficial iResNet library that intend to make iResNet easy to use.
 ## Fully connected layers
 
 ![](https://img.shields.io/static/v1?label=Inverse+test&message=Pass&color=green)
-![](https://img.shields.io/static/v1?label=Distribution+test&message=Working&color=brown)
+![](https://img.shields.io/static/v1?label=Distribution+test&message=Pass&color=green)
 
 Define a fully connected i-ResNet:
 
@@ -62,7 +62,7 @@ The `log_det_J` is the log(det J) from previous layers. They both be 0 by defaul
 ## Sequential
 
 ![](https://img.shields.io/static/v1?label=Inverse+test&message=Pass&color=green)
-![](https://img.shields.io/static/v1?label=Distribution+test&message=Working&color=brown)
+![](https://img.shields.io/static/v1?label=Distribution+test&message=Pass&color=green)
 
 Defining a sequential of FCN i-ResNet:
 
@@ -195,9 +195,8 @@ xhat = model.inverse(y)
 
 ## Batch Normalization
 
-![](https://img.shields.io/static/v1?label=Inverse+test&message=Processing&color=brown)
-![](https://img.shields.io/static/v1?label=Distribution+test&message=Working&color=brown)
-![](https://img.shields.io/static/v1?label=Code&message=Testing&color=yellow)
+![](https://img.shields.io/static/v1?label=Inverse+test&message=Pass&color=green)
+![](https://img.shields.io/static/v1?label=Distribution+test&message=pass&color=green)
 
 `iResNet.BatchNorm1d()`
 

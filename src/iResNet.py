@@ -1,5 +1,5 @@
 '''
-High-level abstraction of i-ResNet
+High-level abstraction of invertible neural networks
 Author: Yanbo Zhang
 '''
 
@@ -202,13 +202,13 @@ class RealNVP(nn.Module):
     def __init__(self, dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1):
         super(RealNVP, self).__init__()
         if (f_log_s is None) and (f_t is None):
-            log_s = self.sequential(dim, k)
-            t = self.sequential(dim, k)
+            log_s = self.default_net(dim, k)
+            t = self.default_net(dim, k)
             self.net = utilities.combined_real_nvp(dim, log_s, t, mask, clip)
         else:
             self.net = utilities.combined_real_nvp(dim, f_log_s, f_t, mask, clip)
     
-    def sequential(self, dim, k):
+    def default_net(self, dim, k):
         block = nn.Sequential(nn.Linear(dim, k * dim), nn.SELU(),
                               nn.Linear(k * dim, k * dim), nn.SELU(),
                               nn.Linear(k * dim, dim))
