@@ -212,7 +212,12 @@ class RealNVP(nn.Module):
         block = nn.Sequential(nn.Linear(dim, k * dim), nn.SELU(),
                               nn.Linear(k * dim, k * dim), nn.SELU(),
                               nn.Linear(k * dim, dim))
+        block.apply(self.init_weights)
         return block
+    
+    def init_weights(self, m):
+        if type(m) == nn.Linear:
+            torch.nn.init.xavier_normal_(m.weight.data, gain=3/4)
 
     def forward(self, x, log_p0=0, log_det_J_=0):
         x, log_det = self.net(x)
