@@ -139,33 +139,35 @@ def permutation_matrix(dim):
         x[i, (i+1) % (dim)] = 1
     return x
 
+
 class InvertibleLinear(nn.Module):
     '''
     Invertible Linear
-    ref: https://arxiv.org/pdf/1807.03039.pdf 3.2
+    ref: https://arxiv.org/pdf/1807.03039.pdf section 3.2
+    TODO: have a better initialization
+    For initialization, we can use W = torch.nn.init.orthogonal_()
     '''
     def __init__(self, dim):
         super(InvertibleLinear, self).__init__()
         self.P = permutation_matrix(dim)
+        self.I = torch.diag(torch.ones(dim))
 
-        self.L = nn.Parameter(self.get_L(dim) / (dim))
-        self.U = nn.Parameter(self.get_U(dim) / (dim))
-        self.log_s = nn.Parameter(torch.zeros(dim))
+        self._L = nn.Parameter(torch.randn(dim, dim))
+        self._U = nn.Parameter(torch.randn(dim, dim))
+        self.log_s = nn.Parameter(torch.randn(dim))
 
-    def get_L(self, dim):
-        L = torch.tril(torch.randn(dim, dim))
-        for i in range(dim):
-            L[i,i] = 1
-        return L
+    def L(self):
+        # turn l to lower
+        l_ = torch.tril(self._L, diagonal=-1)
 
-    def get_U(self, dim):
-        U = torch.triu(torch.randn(dim, dim))
-        for i in range(dim):
-            U[i, i] = 0
-        return U
+        return l_ + self.I.to(self._L.device)
+    
+    def U(self):
+        return torch.triu(self._U, diagonal=1)
     
     def W(self):
-        return self.P @ self.L @ (self.U + torch.diag(torch.exp(self.log_s)))
+        s = torch.diag(torch.exp(self.log_s))
+        return self.P.to(self._L.device) @ self.L() @ (self.U() + s)
     
     def inv_W(self):
         # need to be optimized based on the LU decomposition

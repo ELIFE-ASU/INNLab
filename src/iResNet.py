@@ -193,7 +193,7 @@ class Linear(utilities.InvertibleLinear):
 
         return x, log_p0, log_det_J + log_det
     
-    def inverse(self, y, num_iter=1):
+    def inverse(self, y, **args):
         return super(Linear, self).inverse(y)
 
 
@@ -209,15 +209,17 @@ class RealNVP(nn.Module):
             self.net = utilities.combined_real_nvp(dim, f_log_s, f_t, mask, clip)
     
     def default_net(self, dim, k):
-        block = nn.Sequential(nn.Linear(dim, k * dim), nn.SELU(),
-                              nn.Linear(k * dim, k * dim), nn.SELU(),
+        block = nn.Sequential(nn.Linear(dim, k * dim), nn.LeakyReLU(),
+                              nn.Linear(k * dim, k * dim), nn.LeakyReLU(),
                               nn.Linear(k * dim, dim))
         block.apply(self.init_weights)
         return block
     
     def init_weights(self, m):
         if type(m) == nn.Linear:
-            torch.nn.init.xavier_normal_(m.weight.data, gain=3/4)
+            # doing Kaiming initialization
+            torch.nn.init.kaiming_normal_(m.weight.data, nonlinearity='leaky_relu')
+            torch.nn.init.zeros_(m.bias.data)
 
     def forward(self, x, log_p0=0, log_det_J_=0):
         x, log_det = self.net(x)
