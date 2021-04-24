@@ -1,14 +1,14 @@
-# iResNetLab
+# INNLab
 
 ![](https://img.shields.io/static/v1?label=pytorch&message=≥1.8.1&color=yellow)
 
-A simple unofficial iResNet library that intend to make iResNet easy to use.
+> A pytorch package for Invertible Neural Networks (INN)
 
 # Analogy to `torch.nn`
 
 | pytorch                      | iResNetLab                     |
 | ---------------------------- | ------------------------------ |
-| `nn.Linear(dim_in, dim_out)` | `iResNet.FCN(dim_in, dim_out)` |
+| --- | `iResNet.Nonlinear(dim)` |
 | `nn.Conv1d(channel_in, channel_out, kernel_size)`| `iResNet.Conv1d(channel, kernel_size)`|
 | `nn.Conv2d(channel_in, channel_out, kernel_size)`| `iResNet.Conv2d(channel, kernel_size)`|
 | `nn.Sequential(*modules)`    | `iResNet.Sequential(*modules)` |
