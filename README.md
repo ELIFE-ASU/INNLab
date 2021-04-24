@@ -8,10 +8,10 @@
 
 | pytorch                      | iResNetLab                     |
 | ---------------------------- | ------------------------------ |
-| --- | `iResNet.Nonlinear(dim)` |
-| `nn.Conv1d(channel_in, channel_out, kernel_size)`| `iResNet.Conv1d(channel, kernel_size)`|
-| `nn.Conv2d(channel_in, channel_out, kernel_size)`| `iResNet.Conv2d(channel, kernel_size)`|
-| `nn.Sequential(*modules)`    | `iResNet.Sequential(*modules)` |
+| --- | `INN.Nonlinear(dim)` |
+| `nn.Conv1d(channel_in, channel_out, kernel_size)`| `INN.Conv1d(channel, kernel_size)` |
+| `nn.Conv2d(channel_in, channel_out, kernel_size)`| `INN.Conv2d(channel, kernel_size)` |
+| `nn.Sequential(*modules)`    | `INN.Sequential(*modules)` |
 
 ## Fully connected layers
 
@@ -21,7 +21,7 @@
 Define a fully connected i-ResNet:
 
 ```python
-model = iResNet.FCN(2, 2)
+model = INN.FCN(2, 2)
 model.train()
 ```
 
@@ -67,7 +67,7 @@ The `log_det_J` is the log(det J) from previous layers. They both be 0 by defaul
 Defining a sequential of FCN i-ResNet:
 
 ```python
-model = iResNet.Sequential(iResNet.FCN(2, 2),
+model = INN.Sequential(iResNet.FCN(2, 2),
                            iResNet.FCN(2, 2),
                            iResNet.FCN(2, 2))
 model.train()
@@ -89,7 +89,7 @@ model.inverse(y.detach())
 >>>         [3., 4.]])
 ```
 
-The modules for `iResNet.Sequential` must have this form: `model(x, log_p0, log_det_J0) --> y, log_p, log_det_J`. 
+The modules for `INN.Sequential` must have this form: `model(x, log_p0, log_det_J0) --> y, log_p, log_det_J`. 
 It must contains following methods:
 
 1. `self.inverse(y) --> x`: a inverse method
@@ -208,7 +208,7 @@ xhat = model.inverse(y)
 
 ## Real NVP
 
-`iResNet.RealNVP(dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1)`
+`INN.RealNVP(dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1)`
 
 Parameters:
 
