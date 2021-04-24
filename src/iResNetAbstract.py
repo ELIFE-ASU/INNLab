@@ -2,9 +2,21 @@ import torch
 import torch.nn as nn
 from utilities import vjp
 
+class INNModule(nn.Module):
+    def __init__(self):
+        super(INNModule, self).__init__()
+        self.compute_p = True
+
+    def computing_p(self, b):
+        self.compute_p = b
+        for sub_m in self.modules():
+            if isinstance(sub_m, INNModule):
+                #sub_m.computing_p(b)
+                sub_m.compute_p = b
+
 # i-ResNet Modules
 
-class iResNetModule(nn.Module):
+class iResNetModule(INNModule):
     '''
     Basic Module of i-ResNet
     '''
@@ -18,37 +30,18 @@ class iResNetModule(nn.Module):
     def logdet(self, x, g):
         # Compute log(det J)
         pass
-
-    def P(self, y):
-        # compute log probability of abandoned information
-        pass
-
-    def cut(self, y):
-        # resize y
-        pass
-
-    def inject_noise(self, y):
-        # inject noise to y
-        pass
     
     def forward(self, x, log_p0=0, log_det_J_=0):
-        if self.training:
-            # if in the training mode, we need to compute log(det(J))
-
-            # ResNet: y = x + g(x)
+        if self.compute_p:
             g = self.g(x)
             y = x + g
-            # Resize if dim_out < dim_in
-            y, z = self.cut(y) # split y in to output y' and abandoned information z
-            
-            # compute Jacobian and probability
-            log_det_J = log_det_J_ + self.logdet(x, g) # compute log(det|J_i|) and inherit log(det|J_{i-1}|)
-            log_p = log_p0 + self.P(z) # compute probability of z, and inherit log(p_0)
+
+            log_det_J = log_det_J_ + self.logdet(x, g) 
+            log_p = log_p0 
             return y, log_p, log_det_J
 
         else:
             y = x + self.g(x)
-            y, z = self.cut(y)
             return y
     
     def inverse(self, y, num_iter=100):
@@ -58,15 +51,15 @@ class iResNetModule(nn.Module):
         '''
         orginal_state = self.training
 
-        y_hat = self.inject_noise(y)
+        #y_hat = self.inject_noise(y)
 
         if self.training:
             self.eval()
         
         with torch.no_grad():
-            x = torch.zeros(y_hat.shape).to(y_hat.device)
+            x = torch.zeros(y.shape).to(y.device)
             for i in range(num_iter):
-                x = y_hat - self.g(x)
+                x = y - self.g(x)
         
         self.train(orginal_state)
         return x

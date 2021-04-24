@@ -112,13 +112,15 @@ class Conv2d(iResNetAbstract.Conv):
         self.net = utilities.SNCov2d(channel, kernel_size, w=w, k=k)
 
 
-class Sequential(nn.Sequential):
+class Sequential(nn.Sequential, iResNetAbstract.INNModule):
 
     def __init__(self, *args):
-        super(Sequential, self).__init__(*args)
+        #super(Sequential, self).__init__(*args)
+        iResNetAbstract.INNModule.__init__(self)
+        nn.Sequential.__init__(self, *args)
     
     def forward(self, x, log_p0=0, log_det_J_=0):
-        if self.training:
+        if self.compute_p:
             logp = 0
             logdet = 0
 
@@ -156,12 +158,13 @@ class PixelShuffle2d(iResNetAbstract.PixelShuffleModule):
         return self.unshuffle(x)
 
 
-class BatchNorm1d(nn.BatchNorm1d):
+class BatchNorm1d(nn.BatchNorm1d, iResNetAbstract.INNModule):
     def __init__(self, dim):
-        super(BatchNorm1d, self).__init__(num_features=dim, affine=False)
+        iResNetAbstract.INNModule.__init__(self)
+        nn.BatchNorm1d.__init__(self, num_features=dim, affine=False)
 
     def forward(self, x, log_p=0, log_det_J=0):
-        if self.training:
+        if self.compute_p:
             var = torch.var(x, dim=0)
 
             x = super(BatchNorm1d, self).forward(x)
@@ -173,7 +176,7 @@ class BatchNorm1d(nn.BatchNorm1d):
         else:
             return super(BatchNorm1d, self).forward(x)
     
-    def inverse(self, y, num_iter=1):
+    def inverse(self, y, **args):
         var = self.running_var + self.eps
         mean = self.running_mean
         x = y * torch.sqrt(var) + mean
@@ -191,39 +194,29 @@ class Linear(utilities.InvertibleLinear):
             log_det = self.logdet().repeat(x.shape[0])
         x = super(Linear, self).forward(x)
 
-        return x, log_p0, log_det_J + log_det
+        if self.compute_p:
+            return x, log_p0, log_det_J + log_det
+        else:
+            return x
     
     def inverse(self, y, **args):
         return super(Linear, self).inverse(y)
 
 
-class RealNVP(nn.Module):
+class RealNVP(iResNetAbstract.INNModule):
 
     def __init__(self, dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1):
         super(RealNVP, self).__init__()
         if (f_log_s is None) and (f_t is None):
-            log_s = self.default_net(dim, k)
-            t = self.default_net(dim, k)
+            log_s = utilities.default_net(dim, k)#self.default_net(dim, k)
+            t = utilities.default_net(dim, k)#self.default_net(dim, k)
             self.net = utilities.combined_real_nvp(dim, log_s, t, mask, clip)
         else:
             self.net = utilities.combined_real_nvp(dim, f_log_s, f_t, mask, clip)
     
-    def default_net(self, dim, k):
-        block = nn.Sequential(nn.Linear(dim, k * dim), nn.LeakyReLU(),
-                              nn.Linear(k * dim, k * dim), nn.LeakyReLU(),
-                              nn.Linear(k * dim, dim))
-        block.apply(self.init_weights)
-        return block
-    
-    def init_weights(self, m):
-        if type(m) == nn.Linear:
-            # doing Kaiming initialization
-            torch.nn.init.kaiming_normal_(m.weight.data, nonlinearity='leaky_relu')
-            torch.nn.init.zeros_(m.bias.data)
-
     def forward(self, x, log_p0=0, log_det_J_=0):
         x, log_det = self.net(x)
-        if self.training:
+        if self.compute_p:
             return x, log_p0, log_det + log_det_J_
         else:
             return x
@@ -231,3 +224,67 @@ class RealNVP(nn.Module):
     def inverse(self, y, **args):
         y = self.net.inverse(y)
         return y
+
+
+class NICE(iResNetAbstract.INNModule):
+
+    def __init__(self, dim=None, m=None, mask=None, k=4):
+        super(NICE, self).__init__()
+        
+        if m is None:
+            m_ = utilities.default_net(dim, k)
+            self.net = utilities.NICE(dim, m=m_, mask=mask)
+        else:
+            self.net = utilities.NICE(dim, m=m, mask=mask)
+    
+    def forward(self, x, log_p0=0, log_det_J=0):
+        x = self.net(x)
+        if self.compute_p:
+            return x, log_p0, log_det_J
+        else:
+            return x
+    
+    def inverse(self, y, **args):
+        y = self.net.inverse(y)
+        return y
+
+class iResNet(utilities.iResNet):
+    def __init__(self, dim=None, g=None, beta=0.8, w=8, num_iter=1, num_n=10):
+        super(iResNet, self).__init__(dim, g, beta, w, num_iter, num_n)
+
+def _default_dict(key, _dict, default):
+    if key in _dict:
+        return _dict[key]
+    else:
+        return default
+
+class Nonlinear(iResNetAbstract.INNModule):
+    '''
+    Nonlinear invertible block
+    '''
+    def __init__(self, dim, method='NICE', m=None, mask=None, k=4, **args):
+        super(Nonlinear, self).__init__()
+        
+        self.method = method
+        if method == 'NICE':
+            self.block = NICE(dim, m=m, mask=mask, k=k)
+        if method == 'RealNVP':
+            clip = _default_dict('clip', args, 1)
+            f_log_s = _default_dict('f_log_s', args, None)
+            f_t = _default_dict('f_t', args, None)
+
+            self.block = RealNVP(dim=dim, f_log_s=f_log_s, f_t=f_t, k=k, mask=mask, clip=clip)
+        if method == 'iResNet':
+            g = _default_dict('g', args, None)
+            beta = _default_dict('beta', args, 0.8)
+            w = _default_dict('w', args, 8)
+            num_iter = _default_dict('num_iter', args, 1)
+            num_n = _default_dict('num_n', args, 10)
+            self.block = iResNet(dim=dim, g=g, beta=beta, w=w, num_iter=num_iter, num_n=num_n)
+            
+    
+    def forward(self, x, log_p0=0, log_det_J=0):
+        return self.block(x)
+    
+    def inverse(self, y, **args):
+        return self.block.inverse(y)

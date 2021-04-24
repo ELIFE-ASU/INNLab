@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.nn.utils import spectral_norm
 import torch.nn.functional as F
 from SpectralNormGouk import spectral_norm as spectral_norm_g
+import iResNetAbstract
 
 # compute v.Jacobian, source: https://github.com/jarrelscy/iResnet
 def vjp(ys, xs, v):
@@ -33,6 +34,44 @@ class SNFCN(nn.Module):
         x = self.g(self.k * x)
         
         return x
+
+class iResNet(iResNetAbstract.iResNetModule):
+    '''
+    i-ResNet which g is a fully connected network
+    '''
+    def __init__(self, dim, g=None, beta=0.8, w=8, num_iter=1, num_n=10):
+        '''
+        beta: the Lip constant, beta < 1
+        w: the width of the hidden layer
+        '''
+        super(iResNet, self).__init__()
+        
+        self.dim = dim
+        self.num_iter = num_iter
+        self.num_n = num_n
+        
+        if g is None:
+            self.net = SNFCN(dim, w=w, k=beta)
+        else:
+            self.net = g
+    
+    def g(self, x):
+        return self.net(x)
+    
+    def logdet(self, x, g):
+        self.eval()
+        logdet = 0
+        for i in range(self.num_iter):
+            v = torch.randn(x.shape) # random noise
+            v = v.to(x.device)
+            w = v
+            for k in range(1, self.num_n):
+                w = vjp(g, x, w)[0]
+                logdet += (-1)**(k+1) * torch.sum(w * v, dim=-1) / k
+        
+        logdet /= self.num_iter
+        self.train()
+        return logdet
 
 
 class SNCov1d(nn.Module):
@@ -140,21 +179,34 @@ def permutation_matrix(dim):
     return x
 
 
-class InvertibleLinear(nn.Module):
+class InvertibleLinear(iResNetAbstract.INNModule):
     '''
     Invertible Linear
     ref: https://arxiv.org/pdf/1807.03039.pdf section 3.2
-    TODO: have a better initialization
-    For initialization, we can use W = torch.nn.init.orthogonal_()
     '''
     def __init__(self, dim):
         super(InvertibleLinear, self).__init__()
-        self.P = permutation_matrix(dim)
-        self.I = torch.diag(torch.ones(dim))
 
-        self._L = nn.Parameter(torch.randn(dim, dim))
-        self._U = nn.Parameter(torch.randn(dim, dim))
-        self.log_s = nn.Parameter(torch.randn(dim))
+        self._initialize(dim)
+
+    def _initialize(self, dim):
+        w, P, L, U = self.sampling_W(dim)
+        self.P = P
+        self._L = nn.Parameter(L)
+        self._U = nn.Parameter(torch.triu(U, diagonal=1))
+        self.log_s = nn.Parameter(torch.log(torch.abs(torch.diag(U))))
+
+        self.I = torch.diag(torch.ones(dim))
+        return
+    
+    def sampling_W(self, dim):
+        # sample a rotation matrix
+        W = torch.empty(dim, dim)
+        torch.nn.init.orthogonal_(W)
+        # compute LU
+        LU, pivot = torch.lu(W)
+        P, L, U = torch.lu_unpack(LU, pivot)
+        return W, P, L, U
 
     def L(self):
         # turn l to lower
@@ -186,7 +238,7 @@ class InvertibleLinear(nn.Module):
         return F.linear(y, self.inv_W())
 
 
-class real_nvp_element(nn.Module):
+class real_nvp_element(iResNetAbstract.INNModule):
     '''
     The very basic element of real nvp
     '''
@@ -258,8 +310,17 @@ class real_nvp_element(nn.Module):
 
         return x
 
+def generate_mask(dim):
+    '''
+    generate mask for given dimension number `dim`
+    '''
+    mask = torch.zeros((1, dim))
+    for i in range(dim):
+        if i % 2 == 0:
+            mask[0, i] = 1
+    return mask
 
-class combined_real_nvp(nn.Module):
+class combined_real_nvp(iResNetAbstract.INNModule):
     '''
     The very basic element of real nvp
     '''
@@ -267,7 +328,7 @@ class combined_real_nvp(nn.Module):
         super(combined_real_nvp, self).__init__()
 
         if mask is None:
-            self.mask = self.generate_mask(dim)
+            self.mask = generate_mask(dim)
         else:
             self.mask = mask
         
@@ -295,3 +356,62 @@ class combined_real_nvp(nn.Module):
         y = self.nvp_1.inverse(y)
 
         return y
+
+
+class NICE(iResNetAbstract.INNModule):
+    '''
+    dim: dimension of input / output
+    m: function m
+    '''
+    def __init__(self, dim, m, mask=None):
+        super(NICE, self).__init__()
+
+        if mask is None:
+            self.mask = generate_mask(dim)
+        else:
+            self.mask = mask
+        self.m = m
+    
+    def forward(self, x):
+        if len(x.shape) == 1:
+            b = self.mask.squeeze().to(x.device)
+        else:
+            b = self.mask.to(x.device)
+        
+        x = x + (1-b) * self.m(b * x)
+        x = x + b * self.m((1-b) * x)
+        return x
+    
+    def logdet(self):
+        return 0
+    
+    def inverse(self, y):
+        if len(y.shape) == 1:
+            b = self.mask.squeeze().to(y.device)
+        else:
+            b = self.mask.to(y.device)
+        y = y - b * self.m((1-b) * y)
+        y = y - (1 - b) * self.m(b * y)
+        return y
+
+
+class default_net(nn.Module):
+    def __init__(self, dim, k):
+        super(default_net, self).__init__()
+        self.net = self.default_net(dim, k)
+    
+    def default_net(self, dim, k):
+        block = nn.Sequential(nn.Linear(dim, k * dim), nn.LeakyReLU(),
+                              nn.Linear(k * dim, k * dim), nn.LeakyReLU(),
+                              nn.Linear(k * dim, dim))
+        block.apply(self.init_weights)
+        return block
+    
+    def init_weights(self, m):
+        if type(m) == nn.Linear:
+            # doing Kaiming initialization
+            torch.nn.init.kaiming_normal_(m.weight.data, nonlinearity='leaky_relu')
+            torch.nn.init.zeros_(m.bias.data)
+    
+    def forward(self, x):
+        return self.net(x)
