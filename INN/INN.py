@@ -6,15 +6,15 @@ Author: Yanbo Zhang
 import torch
 import torch.nn as nn
 import utilities
-import iResNetAbstract 
+import INNAbstract 
 
 # for test only, reload for any changes
 import importlib
-importlib.reload(iResNetAbstract)
+importlib.reload(INNAbstract)
 importlib.reload(utilities)
 # end
 
-iResNetModule = iResNetAbstract.iResNetModule
+iResNetModule = INNAbstract.iResNetModule
 
 class FCN(iResNetModule):
     '''
@@ -92,7 +92,7 @@ class FCN(iResNetModule):
         return logdet
 
 
-class Conv1d(iResNetAbstract.Conv):
+class Conv1d(INNAbstract.Conv):
     '''
     1-d convolutional i-ResNet
     '''
@@ -102,7 +102,7 @@ class Conv1d(iResNetAbstract.Conv):
         self.net = utilities.SNCov1d(channel, kernel_size, w=w, k=k)
 
 
-class Conv2d(iResNetAbstract.Conv):
+class Conv2d(INNAbstract.Conv):
     '''
     1-d convolutional i-ResNet
     '''
@@ -112,11 +112,11 @@ class Conv2d(iResNetAbstract.Conv):
         self.net = utilities.SNCov2d(channel, kernel_size, w=w, k=k)
 
 
-class Sequential(nn.Sequential, iResNetAbstract.INNModule):
+class Sequential(nn.Sequential, INNAbstract.INNModule):
 
     def __init__(self, *args):
         #super(Sequential, self).__init__(*args)
-        iResNetAbstract.INNModule.__init__(self)
+        INNAbstract.INNModule.__init__(self)
         nn.Sequential.__init__(self, *args)
     
     def forward(self, x, log_p0=0, log_det_J_=0):
@@ -140,7 +140,7 @@ class Sequential(nn.Sequential, iResNetAbstract.INNModule):
         return y
 
 
-class PixelShuffle2d(iResNetAbstract.PixelShuffleModule):
+class PixelShuffle2d(INNAbstract.PixelShuffleModule):
     '''
     2d invertible pixel shuffle, using the built-in method
     from pytorch. (nn.PixelShuffle, and nn.PixelUnshuffle)
@@ -158,9 +158,9 @@ class PixelShuffle2d(iResNetAbstract.PixelShuffleModule):
         return self.unshuffle(x)
 
 
-class BatchNorm1d(nn.BatchNorm1d, iResNetAbstract.INNModule):
+class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
     def __init__(self, dim):
-        iResNetAbstract.INNModule.__init__(self)
+        INNAbstract.INNModule.__init__(self)
         nn.BatchNorm1d.__init__(self, num_features=dim, affine=False)
 
     def forward(self, x, log_p=0, log_det_J=0):
@@ -203,7 +203,7 @@ class Linear(utilities.InvertibleLinear):
         return super(Linear, self).inverse(y)
 
 
-class RealNVP(iResNetAbstract.INNModule):
+class RealNVP(INNAbstract.INNModule):
 
     def __init__(self, dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1):
         super(RealNVP, self).__init__()
@@ -226,7 +226,7 @@ class RealNVP(iResNetAbstract.INNModule):
         return y
 
 
-class NICE(iResNetAbstract.INNModule):
+class NICE(INNAbstract.INNModule):
 
     def __init__(self, dim=None, m=None, mask=None, k=4):
         super(NICE, self).__init__()
@@ -258,7 +258,7 @@ def _default_dict(key, _dict, default):
     else:
         return default
 
-class Nonlinear(iResNetAbstract.INNModule):
+class Nonlinear(INNAbstract.INNModule):
     '''
     Nonlinear invertible block
     '''

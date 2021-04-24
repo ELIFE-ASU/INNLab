@@ -1,2 +1,2 @@
-import iResNet
+import INN
 import utilities

@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.nn.utils import spectral_norm
 import torch.nn.functional as F
 from SpectralNormGouk import spectral_norm as spectral_norm_g
-import iResNetAbstract
+import INNAbstract
 
 # compute v.Jacobian, source: https://github.com/jarrelscy/iResnet
 def vjp(ys, xs, v):
@@ -35,7 +35,7 @@ class SNFCN(nn.Module):
         
         return x
 
-class iResNet(iResNetAbstract.iResNetModule):
+class iResNet(INNAbstract.iResNetModule):
     '''
     i-ResNet which g is a fully connected network
     '''
@@ -179,7 +179,7 @@ def permutation_matrix(dim):
     return x
 
 
-class InvertibleLinear(iResNetAbstract.INNModule):
+class InvertibleLinear(INNAbstract.INNModule):
     '''
     Invertible Linear
     ref: https://arxiv.org/pdf/1807.03039.pdf section 3.2
@@ -238,7 +238,7 @@ class InvertibleLinear(iResNetAbstract.INNModule):
         return F.linear(y, self.inv_W())
 
 
-class real_nvp_element(iResNetAbstract.INNModule):
+class real_nvp_element(INNAbstract.INNModule):
     '''
     The very basic element of real nvp
     '''
@@ -320,7 +320,7 @@ def generate_mask(dim):
             mask[0, i] = 1
     return mask
 
-class combined_real_nvp(iResNetAbstract.INNModule):
+class combined_real_nvp(INNAbstract.INNModule):
     '''
     The very basic element of real nvp
     '''
@@ -358,7 +358,7 @@ class combined_real_nvp(iResNetAbstract.INNModule):
         return y
 
 
-class NICE(iResNetAbstract.INNModule):
+class NICE(INNAbstract.INNModule):
     '''
     dim: dimension of input / output
     m: function m
