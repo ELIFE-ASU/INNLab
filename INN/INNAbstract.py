@@ -110,7 +110,7 @@ class Conv(iResNetModule):
         return logdet
 
 
-class PixelShuffleModule(nn.Module):
+class PixelShuffleModule(INNModule):
     '''
     Module for invertible pixel shuffle
     > Pixel Shuffle: https://arxiv.org/abs/1609.05158
@@ -130,7 +130,10 @@ class PixelShuffleModule(nn.Module):
 
     def forward(self, x, log_p0, log_det_J):
         # The log(p_0) and log|det J| will not change under this transformation
-        return self.PixelUnshuffle(x), log_p0, log_det_J
+        if self.compute_p:
+            return self.PixelUnshuffle(x), log_p0, log_det_J
+        else:
+            return self.PixelUnshuffle(x)
     
     def inverse(self, y, num_iter=100):
         return self.PixelShuffle(y)
