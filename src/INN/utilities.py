@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 from torch.nn.utils import spectral_norm
 import torch.nn.functional as F
-from SpectralNormGouk import spectral_norm as spectral_norm_g
-import INNAbstract
+from INN.SpectralNormGouk import spectral_norm as spectral_norm_g
+import INN.INNAbstract as INNAbstract
 
 # compute v.Jacobian, source: https://github.com/jarrelscy/iResnet
 def vjp(ys, xs, v):

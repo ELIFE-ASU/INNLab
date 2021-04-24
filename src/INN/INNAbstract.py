@@ -1,6 +1,10 @@
 import torch
 import torch.nn as nn
-from utilities import vjp
+#from INN.utilities import vjp
+
+def vjp(ys, xs, v):
+    vJ = torch.autograd.grad(ys, xs, grad_outputs=v, create_graph=True, retain_graph=True, allow_unused=True)
+    return tuple([j for j in vJ])
 
 class INNModule(nn.Module):
     def __init__(self):

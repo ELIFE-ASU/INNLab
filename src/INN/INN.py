@@ -5,8 +5,8 @@ Author: Yanbo Zhang
 
 import torch
 import torch.nn as nn
-import utilities
-import INNAbstract 
+import INN.utilities as utilities
+import INN.INNAbstract as INNAbstract
 
 # for test only, reload for any changes
 import importlib

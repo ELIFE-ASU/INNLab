@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="INNLab", # Replace with your own username
-    version="0.0.1",
+    version="0.0.2",
     author="Yanbo Zhang",
     author_email="zhangybspm@gmail.com",
     description="A package for invertible neural networks",
@@ -21,6 +21,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src"),
+    packages=['INN'],#setuptools.find_packages(where="src/INN"),
     python_requires=">=3.6",
 )
