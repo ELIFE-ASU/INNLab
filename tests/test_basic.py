@@ -18,10 +18,10 @@ Test Modules:
 '''
 
 # Defining test blocks
-block = INN.Nonlinear(dim=3, method='RealNVP')
-block_seq = INN.Sequential(INN.Nonlinear(dim=3, method='RealNVP'),
-                           INN.Nonlinear(dim=3, method='RealNVP'),
-                           INN.Nonlinear(dim=3, method='RealNVP'))
+block = INN.Nonlinear(dim=3, method='iResNet')
+block_seq = INN.Sequential(INN.Nonlinear(dim=3, method='iResNet'),
+                           INN.Nonlinear(dim=3, method='iResNet'),
+                           INN.Nonlinear(dim=3, method='iResNet'))
 
 
 # Basic test functions
@@ -47,18 +47,19 @@ def _forward_test(model, dim, requires_grad=False, batch_size=8, device='cpu'):
     return 0
 
 
+requires_grad = True
 print('\ntesting block (CPU) ...')
-_forward_test(block, dim=3, device='cpu')
+_forward_test(block, dim=3, requires_grad=requires_grad, device='cpu')
 print('#' * 64)
 
 print('\ntesting block (CUDA) ...')
-_forward_test(block, dim=3, device='cuda:0')
+_forward_test(block, dim=3, requires_grad=requires_grad, device='cuda:0')
 print('#' * 64)
 
 print('\ntesting seq (CPU) ...')
-_forward_test(block_seq, dim=3, device='cpu')
+_forward_test(block_seq, dim=3, requires_grad=requires_grad, device='cpu')
 print('#' * 64)
 
 print('\ntesting seq (CUDA) ...')
-_forward_test(block_seq, dim=3, device='cuda:0')
+_forward_test(block_seq, dim=3, requires_grad=requires_grad, device='cuda:0')
 print('#' * 64)
