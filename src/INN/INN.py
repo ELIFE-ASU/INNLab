@@ -171,7 +171,7 @@ class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
                 var = self.running_var # [dim]
             else:
                 # if in training
-                var = torch.var(x, dim=0, unbiased=False).detach() # [dim]
+                var = torch.var(x, dim=0, unbiased=False) # [dim]
 
             x = super(BatchNorm1d, self).forward(x)
 
