@@ -20,6 +20,7 @@ Test Modules:
 
 # Defining test blocks
 method = 'NICE'
+requires_grad = True
 block = INN.Nonlinear(dim=3, method=method)
 block_seq = INN.Sequential(INN.Nonlinear(dim=3, method=method),
                            INN.Nonlinear(dim=3, method=method),
@@ -64,7 +65,6 @@ def _inverse_test(model, dim, requires_grad=False, batch_size=8, device='cpu'):
     return
 
 
-requires_grad = True
 print('\ntesting block (CPU) ...')
 _forward_test(block, dim=3, requires_grad=requires_grad, device='cpu')
 _inverse_test(block, dim=3, requires_grad=requires_grad, device='cpu')
