@@ -164,8 +164,12 @@ class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
         nn.BatchNorm1d.__init__(self, num_features=dim, affine=False)
 
     def forward(self, x, log_p=0, log_det_J=0):
+        
         if self.compute_p:
-            var = torch.var(x, dim=0)
+            if not self.training:
+                var = self.running_var # [dim]
+            else:
+                var = torch.var(x, dim=0) # [dim]
 
             x = super(BatchNorm1d, self).forward(x)
 

@@ -19,7 +19,7 @@ Test Modules:
 '''
 
 # Defining test blocks
-method = 'NICE'
+method = 'RealNVP'
 requires_grad = True
 block = INN.Nonlinear(dim=3, method=method)
 block_seq = INN.Sequential(INN.Nonlinear(dim=3, method=method),
