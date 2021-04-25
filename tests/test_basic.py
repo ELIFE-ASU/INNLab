@@ -1,5 +1,6 @@
 import INN
 import torch
+import torch.nn as nn
 
 '''
 Test tasks:
@@ -9,7 +10,7 @@ Test unit:
     a. requires p
     b. not requires p
 2. Inverse (eval mode)
-    a. MSE error
+    a. L1 error
 
 Test Modules:
 1. Basic Blocks (CPU / CUDA)
@@ -18,10 +19,11 @@ Test Modules:
 '''
 
 # Defining test blocks
-block = INN.Nonlinear(dim=3, method='iResNet')
-block_seq = INN.Sequential(INN.Nonlinear(dim=3, method='iResNet'),
-                           INN.Nonlinear(dim=3, method='iResNet'),
-                           INN.Nonlinear(dim=3, method='iResNet'))
+method = 'NICE'
+block = INN.Nonlinear(dim=3, method=method)
+block_seq = INN.Sequential(INN.Nonlinear(dim=3, method=method),
+                           INN.Nonlinear(dim=3, method=method),
+                           INN.Nonlinear(dim=3, method=method))
 
 
 # Basic test functions
@@ -46,20 +48,39 @@ def _forward_test(model, dim, requires_grad=False, batch_size=8, device='cpu'):
     
     return 0
 
+def _inverse_test(model, dim, requires_grad=False, batch_size=8, device='cpu'):
+    x = torch.randn((batch_size, dim))
+    x.requires_grad = requires_grad
+    x = x.to(device)
+    model.to(device)
+    model.eval()
+    lf = nn.L1Loss()
+
+    model.computing_p(False)
+    y = model(x)
+    x_hat = model.inverse(y)
+    loss = lf(x, x_hat)
+    print(f'loss={loss}')
+    return
+
 
 requires_grad = True
 print('\ntesting block (CPU) ...')
 _forward_test(block, dim=3, requires_grad=requires_grad, device='cpu')
+_inverse_test(block, dim=3, requires_grad=requires_grad, device='cpu')
 print('#' * 64)
 
 print('\ntesting block (CUDA) ...')
 _forward_test(block, dim=3, requires_grad=requires_grad, device='cuda:0')
+_inverse_test(block, dim=3, requires_grad=requires_grad, device='cuda:0')
 print('#' * 64)
 
 print('\ntesting seq (CPU) ...')
 _forward_test(block_seq, dim=3, requires_grad=requires_grad, device='cpu')
+_inverse_test(block_seq, dim=3, requires_grad=requires_grad, device='cpu')
 print('#' * 64)
 
 print('\ntesting seq (CUDA) ...')
 _forward_test(block_seq, dim=3, requires_grad=requires_grad, device='cuda:0')
+_inverse_test(block_seq, dim=3, requires_grad=requires_grad, device='cuda:0')
 print('#' * 64)
