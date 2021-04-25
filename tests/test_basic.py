@@ -18,47 +18,47 @@ Test Modules:
 '''
 
 # Defining test blocks
-block = INN.Nonlinear(dim=3, method='NICE')
-block_seq = INN.Sequential(INN.Nonlinear(dim=3, method='NICE'),
-                           INN.Nonlinear(dim=3, method='NICE'),
-                           INN.Nonlinear(dim=3, method='NICE'))
+block = INN.Nonlinear(dim=3, method='RealNVP')
+block_seq = INN.Sequential(INN.Nonlinear(dim=3, method='RealNVP'),
+                           INN.Nonlinear(dim=3, method='RealNVP'),
+                           INN.Nonlinear(dim=3, method='RealNVP'))
 
 
 # Basic test functions
 
-def _forward_test(model, dim, requires_grad=False, batch_size=64, device='cpu'):
-    x = torch.randn((dim, batch_size))
+def _forward_test(model, dim, requires_grad=False, batch_size=8, device='cpu'):
+    x = torch.randn((batch_size, dim))
     x.requires_grad = requires_grad
-    x.to(device)
+    x = x.to(device)
     model.to(device)
 
     # reqiores_p = True
     model.computing_p(True)
-    try:
-        y, log_p, log_det = model(x)
-        print(f'y={y},\nlog_p={log_p}\nlog_det={log_det}')
-    except:
-        print('fail at forward (requires p)')
+    print('model.computing_p(True)')
+    y, log_p, log_det = model(x)
+    print(f'y={y},\nlog_p={log_p}\nlog_det={log_det}')
     
     # reqiores_p = False
     model.computing_p(False)
-    try:
-        y = model(x)
-        print(f'y={y}')
-    except:
-        print('fail at forward (not requires p)')
+    print('model.computing_p(False)')
+    y = model(x)
+    print(f'y={y}')
     
     return 0
 
 
-print('testing block (CPU) ...')
+print('\ntesting block (CPU) ...')
 _forward_test(block, dim=3, device='cpu')
+print('#' * 64)
 
-print('testing block (CUDA) ...')
+print('\ntesting block (CUDA) ...')
 _forward_test(block, dim=3, device='cuda:0')
+print('#' * 64)
 
-print('testing seq (CPU) ...')
+print('\ntesting seq (CPU) ...')
 _forward_test(block_seq, dim=3, device='cpu')
+print('#' * 64)
 
-print('testing seq (CUDA) ...')
+print('\ntesting seq (CUDA) ...')
 _forward_test(block_seq, dim=3, device='cuda:0')
+print('#' * 64)

@@ -284,7 +284,7 @@ class Nonlinear(INNAbstract.INNModule):
             
     
     def forward(self, x, log_p0=0, log_det_J=0):
-        return self.block(x)
+        return self.block(x, log_p0, log_det_J)
     
     def inverse(self, y, **args):
-        return self.block.inverse(y)
+        return self.block.inverse(y, **args)
