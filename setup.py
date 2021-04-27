@@ -4,8 +4,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="INNLab", # Replace with your own username
-    version="0.0.2",
+    name="INNLab",
+    version="0.1.0",
     author="Yanbo Zhang",
     author_email="zhangybspm@gmail.com",
     description="A package for invertible neural networks",

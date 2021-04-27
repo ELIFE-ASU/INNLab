@@ -21,15 +21,19 @@ Test Modules:
 # Defining test blocks
 method = 'RealNVP'
 requires_grad = True
-block = INN.Nonlinear(dim=3, method=method)
-block_seq = INN.Sequential(INN.Nonlinear(dim=3, method=method),
-                           INN.Nonlinear(dim=3, method=method),
-                           INN.Nonlinear(dim=3, method=method))
+dim = 5
+block = INN.ResizeFeatures(feature_in=dim, feature_out=dim-1)
+block_seq = INN.Sequential(INN.Nonlinear(dim=dim, method=method),
+                           INN.Nonlinear(dim=dim, method=method),
+                           INN.Nonlinear(dim=dim, method=method),
+                           INN.ResizeFeatures(feature_in=dim, feature_out=dim-1)
+                           )
 
 
 # Basic test functions
 
 def _forward_test(model, dim, requires_grad=False, batch_size=8, device='cpu'):
+    print('#'*32 + ' forward test ' + '#'*32)
     x = torch.randn((batch_size, dim))
     x.requires_grad = requires_grad
     x = x.to(device)
@@ -50,6 +54,7 @@ def _forward_test(model, dim, requires_grad=False, batch_size=8, device='cpu'):
     return 0
 
 def _inverse_test(model, dim, requires_grad=False, batch_size=8, device='cpu'):
+    print('#'*32 + ' inverse test ' + '#'*32)
     x = torch.randn((batch_size, dim))
     x.requires_grad = requires_grad
     x = x.to(device)
@@ -66,21 +71,21 @@ def _inverse_test(model, dim, requires_grad=False, batch_size=8, device='cpu'):
 
 
 print('\ntesting block (CPU) ...')
-_forward_test(block, dim=3, requires_grad=requires_grad, device='cpu')
-_inverse_test(block, dim=3, requires_grad=requires_grad, device='cpu')
+_forward_test(block, dim=dim, requires_grad=requires_grad, device='cpu')
+_inverse_test(block, dim=dim, requires_grad=requires_grad, device='cpu')
 print('#' * 64)
 
 print('\ntesting block (CUDA) ...')
-_forward_test(block, dim=3, requires_grad=requires_grad, device='cuda:0')
-_inverse_test(block, dim=3, requires_grad=requires_grad, device='cuda:0')
+_forward_test(block, dim=dim, requires_grad=requires_grad, device='cuda:0')
+_inverse_test(block, dim=dim, requires_grad=requires_grad, device='cuda:0')
 print('#' * 64)
 
 print('\ntesting seq (CPU) ...')
-_forward_test(block_seq, dim=3, requires_grad=requires_grad, device='cpu')
-_inverse_test(block_seq, dim=3, requires_grad=requires_grad, device='cpu')
+_forward_test(block_seq, dim=dim, requires_grad=requires_grad, device='cpu')
+_inverse_test(block_seq, dim=dim, requires_grad=requires_grad, device='cpu')
 print('#' * 64)
 
 print('\ntesting seq (CUDA) ...')
-_forward_test(block_seq, dim=3, requires_grad=requires_grad, device='cuda:0')
-_inverse_test(block_seq, dim=3, requires_grad=requires_grad, device='cuda:0')
+_forward_test(block_seq, dim=dim, requires_grad=requires_grad, device='cuda:0')
+_inverse_test(block_seq, dim=dim, requires_grad=requires_grad, device='cuda:0')
 print('#' * 64)

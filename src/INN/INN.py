@@ -159,9 +159,10 @@ class PixelShuffle2d(INNAbstract.PixelShuffleModule):
 
 
 class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
-    def __init__(self, dim):
+    def __init__(self, dim, requires_grad=False):
         INNAbstract.INNModule.__init__(self)
         nn.BatchNorm1d.__init__(self, num_features=dim, affine=False)
+        self.requires_grad = requires_grad
 
     def forward(self, x, log_p=0, log_det_J=0):
         
@@ -171,7 +172,9 @@ class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
                 var = self.running_var # [dim]
             else:
                 # if in training
-                var = torch.var(x, dim=0, unbiased=False).detach() # [dim]
+                var = torch.var(x, dim=0, unbiased=False)#.detach() # [dim]
+                if not self.requires_grad:
+                    var = var.detach()
 
             x = super(BatchNorm1d, self).forward(x)
 
@@ -211,11 +214,11 @@ class Linear(utilities.InvertibleLinear):
 
 class RealNVP(INNAbstract.INNModule):
 
-    def __init__(self, dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1):
+    def __init__(self, dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1, activation_fn=None):
         super(RealNVP, self).__init__()
         if (f_log_s is None) and (f_t is None):
-            log_s = utilities.default_net(dim, k)#self.default_net(dim, k)
-            t = utilities.default_net(dim, k)#self.default_net(dim, k)
+            log_s = utilities.default_net(dim, k, activation_fn)#self.default_net(dim, k)
+            t = utilities.default_net(dim, k, activation_fn)#self.default_net(dim, k)
             self.net = utilities.combined_real_nvp(dim, log_s, t, mask, clip)
         else:
             self.net = utilities.combined_real_nvp(dim, f_log_s, f_t, mask, clip)
@@ -234,11 +237,11 @@ class RealNVP(INNAbstract.INNModule):
 
 class NICE(INNAbstract.INNModule):
 
-    def __init__(self, dim=None, m=None, mask=None, k=4):
+    def __init__(self, dim=None, m=None, mask=None, k=4, activation_fn=None):
         super(NICE, self).__init__()
         
         if m is None:
-            m_ = utilities.default_net(dim, k)
+            m_ = utilities.default_net(dim, k, activation_fn)
             self.net = utilities.NICE(dim, m=m_, mask=mask)
         else:
             self.net = utilities.NICE(dim, m=m, mask=mask)
@@ -268,18 +271,18 @@ class Nonlinear(INNAbstract.INNModule):
     '''
     Nonlinear invertible block
     '''
-    def __init__(self, dim, method='NICE', m=None, mask=None, k=4, **args):
+    def __init__(self, dim, method='RealNVP', m=None, mask=None, k=4, activation_fn=None, **args):
         super(Nonlinear, self).__init__()
         
         self.method = method
         if method == 'NICE':
-            self.block = NICE(dim, m=m, mask=mask, k=k)
+            self.block = NICE(dim, m=m, mask=mask, k=k, activation_fn=activation_fn)
         if method == 'RealNVP':
             clip = _default_dict('clip', args, 1)
             f_log_s = _default_dict('f_log_s', args, None)
             f_t = _default_dict('f_t', args, None)
 
-            self.block = RealNVP(dim=dim, f_log_s=f_log_s, f_t=f_t, k=k, mask=mask, clip=clip)
+            self.block = RealNVP(dim=dim, f_log_s=f_log_s, f_t=f_t, k=k, mask=mask, clip=clip, activation_fn=activation_fn)
         if method == 'iResNet':
             g = _default_dict('g', args, None)
             beta = _default_dict('beta', args, 0.8)
@@ -294,3 +297,69 @@ class Nonlinear(INNAbstract.INNModule):
     
     def inverse(self, y, **args):
         return self.block.inverse(y, **args)
+
+class ResizeFeatures(INNAbstract.INNModule):
+    '''
+    Resize for n-d input, include linear or multi-channel inputs
+    '''
+    def __init__(self, feature_in, feature_out, dist='normal'):
+        super(ResizeFeatures, self).__init__()
+        self.feature_in = feature_in
+        self.feature_out = feature_out
+
+        if dist == 'normal':
+            self.dist = utilities.NormalDistribution()
+        elif isinstance(dist, INNAbstract.Distribution):
+            self.dist = dist
+    
+    def resize(self, x, feature_in, feature_out):
+        '''
+        x has two kinds of shapes:
+            1. [feature_in]
+            2. [batch_size, feature_in, *]
+        '''
+        if len(x.shape) == 1:
+            # [feature_in]
+            if x.shape[0] != self.feature_in:
+                raise Exception(f'Expect to get {self.feature_in} features, but got {x.shape[0]}.')
+            y, z = x[:feature_out], x[feature_out:]
+        
+        if len(x.shape) >= 2:
+            # [batch_size, feature_in, *]
+            if x.shape[1] != self.feature_in:
+                raise Exception(f'Expect to get {self.feature_in} features, but got {x.shape[1]}.')
+            y, z = x[:, :feature_out], x[:, feature_out:]
+        
+        return y, z
+
+    def forward(self, x, log_p0=0, log_det_J=0):
+        x, z = self.resize(x, self.feature_in, self.feature_out)
+        if self.compute_p:
+            p = self.dist.logp(z)
+            return x, log_p0 + p, log_det_J
+        else:
+            return x
+    
+    def inverse(self, y, **args):
+        '''
+        y has two kinds of shapes:
+            1. [feature_in]
+            2. [batch_size, feature_in, *]
+        '''
+        if len(y.shape) == 1:
+            # [feature_in]
+            if y.shape[0] != self.feature_out:
+                raise Exception(f'Expect to get {self.feature_out} features, but got {y.shape[0]}.')
+            z = self.dist.sample(self.feature_in-self.feature_out).to(y.device)
+            y = torch.cat([y, z])
+        
+        if len(y.shape) >= 2:
+            # [batch_size, feature_in, *]
+            if y.shape[1] != self.feature_out:
+                raise Exception(f'Expect to get {self.feature_out} features, but got {y.shape[1]}.')
+            shape = list(y.shape)
+            shape[1] = self.feature_in-self.feature_out
+            z = self.dist.sample(shape).to(y.device)
+            y = torch.cat([y, z], dim=1)
+        
+        return y

@@ -141,3 +141,20 @@ class PixelShuffleModule(INNModule):
     
     def inverse(self, y, num_iter=100):
         return self.PixelShuffle(y)
+
+
+class Distribution(nn.Module):
+
+    def __init__(self):
+        super(Distribution, self).__init__()
+    
+    def logp(self, x):
+        raise NotImplementedError('logp() not implemented')
+    
+    def sample(self, shape):
+        raise NotImplementedError('sample() not implemented')
+
+    def forward(self, x):
+        x = self.logp(x)
+        
+        return x

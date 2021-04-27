@@ -138,7 +138,7 @@ class SNCov2d(nn.Module):
         return x
 
 
-class NormalDistribution(nn.Module):
+class NormalDistribution(INNAbstract.Distribution):
     '''
     Generate normal distribution and compute log probablity
     '''
@@ -166,10 +166,6 @@ class NormalDistribution(nn.Module):
     def sample(self, shape):
         return torch.randn(shape)
 
-    def forward(self, x):
-        x = self.logp(x)
-        
-        return x
 
 def permutation_matrix(dim):
     # generate a permuation matrix
@@ -396,21 +392,38 @@ class NICE(INNAbstract.INNModule):
 
 
 class default_net(nn.Module):
-    def __init__(self, dim, k):
+    def __init__(self, dim, k, activation_fn=None):
         super(default_net, self).__init__()
-        self.net = self.default_net(dim, k)
+        self.activation_fn = activation_fn
+        self.net = self.default_net(dim, k, activation_fn)
     
-    def default_net(self, dim, k):
-        block = nn.Sequential(nn.Linear(dim, k * dim), nn.LeakyReLU(),
-                              nn.Linear(k * dim, k * dim), nn.LeakyReLU(),
+    def default_net(self, dim, k, activation_fn):
+        if activation_fn == None:
+            ac = nn.LeakyReLU
+        else:
+            ac = activation_fn
+        
+        block = nn.Sequential(nn.Linear(dim, k * dim), ac(),
+                              nn.Linear(k * dim, k * dim), ac(),
                               nn.Linear(k * dim, dim))
         block.apply(self.init_weights)
         return block
     
     def init_weights(self, m):
+        nonlinearity = 'leaky_relu' # set to leaky_relu by default
+
+        if self.activation_fn is nn.ReLU:
+            nonlinearity = 'leaky_relu'
+        if self.activation_fn is nn.SELU:
+            nonlinearity = 'selu'
+        if self.activation_fn is nn.Tanh:
+            nonlinearity = 'tanh'
+        if self.activation_fn is nn.Sigmoid:
+            nonlinearity = 'sigmoid'
+        
         if type(m) == nn.Linear:
             # doing Kaiming initialization
-            torch.nn.init.kaiming_normal_(m.weight.data, nonlinearity='leaky_relu')
+            torch.nn.init.kaiming_normal_(m.weight.data, nonlinearity=nonlinearity)
             torch.nn.init.zeros_(m.bias.data)
     
     def forward(self, x):
