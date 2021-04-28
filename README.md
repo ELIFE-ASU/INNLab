@@ -6,12 +6,16 @@
 
 # Analogy to `torch.nn`
 
-| pytorch                      | iResNetLab                     |
-| ---------------------------- | ------------------------------ |
-| `nn.Linear()` + `nn.ReLU()` | `INN.Nonlinear(dim)` |
-| `nn.Conv1d(channel_in, channel_out, kernel_size)`| `INN.Conv1d(channel, kernel_size)` |
-| `nn.Conv2d(channel_in, channel_out, kernel_size)`| `INN.Conv2d(channel, kernel_size)` |
-| `nn.Sequential(*modules)`    | `INN.Sequential(*modules)` |
+| Module                | pytorch                      | iResNetLab                     |
+| ---------------------------- | ------------------------------ | ------------------------------ |
+| Sequential | `nn.Sequential(*modules)`    | `INN.Sequential(*modules)` |
+| Non-linear vector operator | `nn.Linear()` + `nn.ReLU()` | `INN.Nonlinear(dim)` |
+| Linear vector operator | `nn.Linear(dim, dim)` | `INN.Linear(dim)` |
+| 1-d 1x1 CNN | `nn.Conv1d(channel, channel, kernel_size=1)` | `INN.Linear1d(channel)` |
+| Non-linear 1-d CNN | `nn.Conv1d(channel_in, channel_out, kernel_size)` + non-linear | `INN.Conv1d(channel, kernel_size)` |
+| Non-linear 2-d CNN | `nn.Conv2d(channel_in, channel_out, kernel_size)`+ non-linear | `INN.Conv2d(channel, kernel_size)` |
+| 1d Batch Normalization | `nn.BatchNorm1d(num_features)` | `INN.BatchNorm1d(num_feature)` |
+| Resize | Included in `nn.Linear` or `nn.Conv` | `INN.ResizeFeatures(feature_in, feature_out)` |
 
 ## Fully connected layers
 
