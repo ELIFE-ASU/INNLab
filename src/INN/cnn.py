@@ -24,6 +24,8 @@ class _default_1d_coupling_function(nn.Module):
     def _init_weights(self, m):
         nonlinearity = 'leaky_relu' # set to leaky_relu by default
 
+        if self.activation_fn is nn.LeakyReLU:
+            nonlinearity = 'leaky_relu'
         if self.activation_fn is nn.ReLU:
             nonlinearity = 'relu'
         if self.activation_fn is nn.SELU:
@@ -33,9 +35,51 @@ class _default_1d_coupling_function(nn.Module):
         if self.activation_fn is nn.Sigmoid:
             nonlinearity = 'sigmoid'
         
-        if type(m) == nn.Linear:
-            # doing Kaiming initialization
-            torch.nn.init.kaiming_normal_(m.weight.data, nonlinearity=nonlinearity)
+        if type(m) == nn.Conv1d:
+            # doing xavier initialization
+            # NOTE: Kaiming initialization will make the output too high, which leads to nan
+            torch.nn.init.xavier_uniform_(m.weight.data)
+            torch.nn.init.zeros_(m.bias.data)
+
+    def forward(self, x):
+        return self.f(x)
+
+
+class _default_2d_coupling_function(nn.Module):
+    def __init__(self, channels, kernel_size, activation_fn=nn.ReLU, w=4):
+        super(_default_2d_coupling_function, self).__init__()
+        if kernel_size % 2 != 1:
+            raise ValueError(f'kernel_size must be an odd number, but got {kernel_size}')
+        r = kernel_size // 2
+
+        self.activation_fn = activation_fn
+        
+        self.f = nn.Sequential(nn.Conv2d(channels, channels * w, kernel_size, padding=r),
+                               activation_fn(),
+                               nn.Conv2d(w * channels, w * channels, kernel_size, padding=r),
+                               activation_fn(),
+                               nn.Conv2d(w * channels, channels, kernel_size, padding=r)
+                              )
+        self.f.apply(self._init_weights)
+    
+    def _init_weights(self, m):
+        nonlinearity = 'leaky_relu' # set to leaky_relu by default
+
+        if self.activation_fn is nn.LeakyReLU:
+            nonlinearity = 'leaky_relu'
+        if self.activation_fn is nn.ReLU:
+            nonlinearity = 'relu'
+        if self.activation_fn is nn.SELU:
+            nonlinearity = 'selu'
+        if self.activation_fn is nn.Tanh:
+            nonlinearity = 'tanh'
+        if self.activation_fn is nn.Sigmoid:
+            nonlinearity = 'sigmoid'
+        
+        if type(m) == nn.Conv2d:
+            # doing xavier initialization
+            # NOTE: Kaiming initialization will make the output too high, which leads to nan
+            torch.nn.init.xavier_uniform_(m.weight.data)
             torch.nn.init.zeros_(m.bias.data)
 
     def forward(self, x):
@@ -69,25 +113,13 @@ class CouplingConv(nn.Module):
         mask = self.mask.reshape(1, self.num_feature, *[1] * len(other)).to(x.device)
         return mask
 
-
-class CouplingConv1d(CouplingConv):
-    '''
-    General 1-d invertible convolution layer for coupling methods
-    '''
-    def __init__(self, num_feature, mask=None):
-        super(CouplingConv1d, self).__init__(num_feature, mask=mask)
-
-
-class Conv1dNICE(CouplingConv1d):
+class ConvNICE(CouplingConv):
     '''
     1-d invertible convolution layer by NICE method
     '''
     def __init__(self, channels, kernel_size, w=4, activation_fn=nn.ReLU, m=None, mask=None):
-        super(Conv1dNICE, self).__init__(num_feature=channels, mask=mask)
-        if m is None:
-            self.m = _default_1d_coupling_function(channels, kernel_size, activation_fn, w=w)
-        else:
-            self.m = m
+        super(ConvNICE, self).__init__(num_feature=channels, mask=mask)
+        self.m = m
     
     def forward(self, x):
         mask = self.working_mask(x)
@@ -113,23 +145,38 @@ class Conv1dNICE(CouplingConv1d):
     def logdet(self, **args):
         return 0
 
+class Conv1dNICE(ConvNICE):
+    '''
+    1-d invertible convolution layer by NICE method
+    '''
+    def __init__(self, channels, kernel_size, w=4, activation_fn=nn.ReLU, m=None, mask=None):
+        super(Conv1dNICE, self).__init__(channels, kernel_size, w=w, activation_fn=activation_fn, m=m, mask=mask)
+        if m is None:
+            self.m = _default_1d_coupling_function(channels, kernel_size, activation_fn, w=w)
+        else:
+            self.m = m
 
-class Conv1dNVP(CouplingConv1d):
+class Conv2dNICE(ConvNICE):
+    '''
+    1-d invertible convolution layer by NICE method
+    '''
+    def __init__(self, channels, kernel_size, w=4, activation_fn=nn.ReLU, m=None, mask=None):
+        super(Conv2dNICE, self).__init__(channels, kernel_size, w=w, activation_fn=activation_fn, m=m, mask=mask)
+        if m is None:
+            self.m = _default_2d_coupling_function(channels, kernel_size, activation_fn, w=w)
+        else:
+            self.m = m
+
+
+class ConvNVP(CouplingConv):
     '''
     1-d invertible convolution layer by NICE method
     TODO: inverse error is too large
     '''
     def __init__(self, channels, kernel_size, w=4, activation_fn=nn.ReLU, s=None, t=None, mask=None):
-        super(Conv1dNVP, self).__init__(num_feature=channels, mask=mask)
-        if s is None:
-            self.log_s = _default_1d_coupling_function(channels, kernel_size, activation_fn, w=w)
-        else:
-            self.log_s = s
-        
-        if t is None:
-            self.t = _default_1d_coupling_function(channels, kernel_size, activation_fn, w=w)
-        else:
-            self.t = t
+        super(ConvNVP, self).__init__(num_feature=channels, mask=mask)
+        self.log_s = s
+        self.t = t
         self.log_det_ = 0
     
     def s(self, x):
@@ -173,6 +220,44 @@ class Conv1dNVP(CouplingConv1d):
         return y
 
 
+class Conv1dNVP(ConvNVP):
+    '''
+    1-d invertible convolution layer by NICE method
+    TODO: inverse error is too large
+    '''
+    def __init__(self, channels, kernel_size, w=4, activation_fn=nn.ReLU, s=None, t=None, mask=None):
+        super(Conv1dNVP, self).__init__(channels, kernel_size, w=w, activation_fn=activation_fn, s=s, t=t, mask=mask)
+        if s is None:
+            self.log_s = _default_1d_coupling_function(channels, kernel_size, activation_fn, w=w)
+        else:
+            self.log_s = s
+        
+        if t is None:
+            self.t = _default_1d_coupling_function(channels, kernel_size, activation_fn, w=w)
+        else:
+            self.t = t
+        self.log_det_ = 0
+
+
+class Conv2dNVP(ConvNVP):
+    '''
+    1-d invertible convolution layer by NICE method
+    TODO: inverse error is too large
+    '''
+    def __init__(self, channels, kernel_size, w=4, activation_fn=nn.ReLU, s=None, t=None, mask=None):
+        super(Conv2dNVP, self).__init__(channels, kernel_size, w=w, activation_fn=activation_fn, s=s, t=t, mask=mask)
+        if s is None:
+            self.log_s = _default_2d_coupling_function(channels, kernel_size, activation_fn, w=w)
+        else:
+            self.log_s = s
+        
+        if t is None:
+            self.t = _default_2d_coupling_function(channels, kernel_size, activation_fn, w=w)
+        else:
+            self.t = t
+        self.log_det_ = 0
+
+
 class Conv1diResNet(INNAbstract.Conv):
     '''
     1-d convolutional i-ResNet
@@ -188,6 +273,6 @@ class Conv2diResNet(INNAbstract.Conv):
     1-d convolutional i-ResNet
     '''
     def __init__(self, channel, kernel_size, w=8, k=0.8, num_iter=1, num_n=10):
-        super(Conv1diResNet, self).__init__(num_iter=num_iter, num_n=num_n)
+        super(Conv2diResNet, self).__init__(num_iter=num_iter, num_n=num_n)
         
         self.net = utilities.SNCov2d(channel, kernel_size, w=w, k=k)

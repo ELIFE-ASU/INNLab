@@ -45,7 +45,25 @@ def Jacobian_matrix(model, x):
     
     return grad.detach().reshape(y.shape), log_det.detach()
 
+def JacobianShapeTest(model, shape):
+    if isinstance(shape, int):
+        input_shape = (10, shape)
+    else:
+        input_shape = (10, *shape)
+    input = torch.randn(input_shape) # batch_size = 10
+    input.requires_grad = True
+
+    # The log|det J| should also have shape [batch_size]
+    model.eval()
+    model.computing_p(True)
+    output, log_p, log_det = model(input)
+    if log_det.shape == (10,):
+        print('shape test pass', end=', ')
+    else:
+        raise Exception(f'expect to got log_det.shape=[10], but got {log_det.shape}')
+
 def TestJacobian(model, shape, th=1e-6):
+    JacobianShapeTest(model, shape)
     model.eval()
     J, logdet = Jacobian_matrix(model, x=torch.randn(shape))
     #print(J.shape)
@@ -105,3 +123,32 @@ model = INN.Sequential(INN.Conv1d(5, kernel_size=1, method='RealNVP'),
                        INN.PixelShuffle1d(2),
                        INN.Reshape(shape_in=(10,4), shape_out=(40,)))
 TestJacobian(model, shape=(5, 8))
+
+print('#'*8 + ' Conv2d (NICE) ' + '#'*8)
+model = INN.Sequential(INN.Conv2d(5, kernel_size=3, method='NICE'),
+                       INN.BatchNorm2d(5),
+                       INN.Reshape(shape_in=(5,4,4), shape_out=(80,)))
+model[1].running_var *= torch.exp(torch.randn(1))
+TestJacobian(model, shape=(5, 4, 4))
+
+print('#'*8 + ' Conv2d (RealNVP) ' + '#'*8)
+model = INN.Sequential(INN.Conv2d(5, kernel_size=3, method='RealNVP'),
+                       INN.BatchNorm2d(5),
+                       INN.Reshape(shape_in=(5,4,4), shape_out=(80,)))
+model[1].running_var *= torch.exp(torch.randn(1))
+TestJacobian(model, shape=(5, 4, 4))
+
+print('#'*8 + ' Conv2d (iResNet) ' + '#'*8)
+model = INN.Sequential(INN.Conv2d(5, kernel_size=3, method='iResNet'),
+                       INN.BatchNorm2d(5),
+                       INN.Reshape(shape_in=(5,4,4), shape_out=(80,)))
+model[1].running_var *= torch.exp(torch.randn(1))
+TestJacobian(model, shape=(5, 4, 4))
+
+print('#'*8 + ' Linear2d ' + '#'*8)
+model = INN.Sequential(INN.Linear2d(5),
+                       INN.BatchNorm2d(5),
+                       INN.PixelShuffle2d(2),
+                       INN.Reshape(shape_in=(20,2,2), shape_out=(80,)))
+model[1].running_var *= torch.exp(torch.randn(1))
+TestJacobian(model, shape=(5, 4, 4))
