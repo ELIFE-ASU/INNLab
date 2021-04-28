@@ -278,8 +278,8 @@ class InvertibleLinear(INNAbstract.INNModule):
         super(InvertibleLinear, self).__init__()
         self.mat = PLUMatrix(dim, positive_s=positive_s, eps=eps)
     
-    def logdet(self):
-        return self.mat.logdet()
+    def logdet(self, x):
+        return self.mat.logdet().repeat(x.shape[0])
 
     def forward(self, x):
         weight = self.mat.W()
