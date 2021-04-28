@@ -93,8 +93,15 @@ model.running_var *= torch.exp(torch.randn(1))
 TestJacobian(model, shape=(5,))
 
 print('#'*8 + ' BatchNorm1d (1d) ' + '#'*8)
-model = INN.Sequential(#INN.Conv1d(5, kernel_size=1, method='RealNVP'),
+model = INN.Sequential(INN.Conv1d(5, kernel_size=1, method='RealNVP'),
                        INN.BatchNorm1d(5),
                        INN.Reshape(shape_in=(5,8), shape_out=(40,)))
-model[0].running_var *= torch.exp(torch.randn(1))
+model[1].running_var *= torch.exp(torch.randn(1))
+TestJacobian(model, shape=(5, 8))
+
+
+print('#'*8 + ' PixelShuffle1d ' + '#'*8)
+model = INN.Sequential(INN.Conv1d(5, kernel_size=1, method='RealNVP'),
+                       INN.PixelShuffle1d(2),
+                       INN.Reshape(shape_in=(10,4), shape_out=(40,)))
 TestJacobian(model, shape=(5, 8))

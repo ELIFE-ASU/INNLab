@@ -9,6 +9,7 @@ import INN.utilities as utilities
 import INN.INNAbstract as INNAbstract
 import INN.cnn as cnn
 import torch.nn.functional as F
+import INN.pixel_shuffle_1d as ps
 
 iResNetModule = INNAbstract.iResNetModule
 
@@ -126,6 +127,24 @@ class PixelShuffle2d(INNAbstract.PixelShuffleModule):
         self.r = r
         self.shuffle = nn.PixelShuffle(r)
         self.unshuffle = nn.PixelUnshuffle(r)
+    
+    def PixelShuffle(self, x):
+        return self.shuffle(x)
+    
+    def PixelUnshuffle(self, x):
+        return self.unshuffle(x)
+
+
+class PixelShuffle1d(INNAbstract.PixelShuffleModule):
+    '''
+    2d invertible pixel shuffle, using the built-in method
+    from pytorch. (nn.PixelShuffle, and nn.PixelUnshuffle)
+    '''
+    def __init__(self, r):
+        super(PixelShuffle1d, self).__init__()
+        self.r = r
+        self.shuffle = ps.PixelShuffle1D(r)
+        self.unshuffle = ps.PixelUnshuffle1D(r)
     
     def PixelShuffle(self, x):
         return self.shuffle(x)

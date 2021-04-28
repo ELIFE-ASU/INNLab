@@ -131,14 +131,14 @@ class PixelShuffleModule(INNModule):
     def PixelUnshuffle(self, x):
         pass
 
-    def forward(self, x, log_p0, log_det_J):
+    def forward(self, x, log_p0=0, log_det_J=0):
         # The log(p_0) and log|det J| will not change under this transformation
         if self.compute_p:
             return self.PixelUnshuffle(x), log_p0, log_det_J
         else:
             return self.PixelUnshuffle(x)
     
-    def inverse(self, y, num_iter=100):
+    def inverse(self, y, **args):
         return self.PixelShuffle(y)
 
 

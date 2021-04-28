@@ -146,3 +146,11 @@ print('Sequential:')
 model = INN.Sequential(model,
                        model)
 BasicTest(model, [5, 8], requires_grad=False)
+
+print('#'*32 + ' Testing PixelShuffle1d ' + '#'*32)
+model = INN.PixelShuffle1d(2)
+BasicTest(model, [5, 8], requires_grad=False)
+print('Sequential:')
+model = INN.Sequential(model,
+                       model)
+BasicTest(model, [5, 8], requires_grad=False)
