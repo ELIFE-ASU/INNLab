@@ -130,3 +130,19 @@ print('Sequential:')
 model = INN.Sequential(INN.Reshape(shape_in=(8,8), shape_out=(64,)),
                        INN.Reshape(shape_in=(64,), shape_out=(32, 2)))
 BasicTest(model, [8, 8], requires_grad=False)
+
+print('#'*32 + ' Testing BatchNorm1d (Linear inputs)' + '#'*32)
+model = INN.BatchNorm1d(5).eval()
+BasicTest(model, [5], requires_grad=False)
+print('Sequential:')
+model = INN.Sequential(model,
+                       model)
+BasicTest(model, [5], requires_grad=False)
+
+print('#'*32 + ' Testing BatchNorm1d (1d CNN)' + '#'*32)
+model = INN.BatchNorm1d(5).eval()
+BasicTest(model, [5, 8], requires_grad=False)
+print('Sequential:')
+model = INN.Sequential(model,
+                       model)
+BasicTest(model, [5, 8], requires_grad=False)

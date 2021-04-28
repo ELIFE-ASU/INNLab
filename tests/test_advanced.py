@@ -1,4 +1,6 @@
 import INN
+import torch
+import torch.nn as nn
 
 '''
 TODO: directly compute log|det(J)| by a strict way, compare to the output
@@ -33,11 +35,66 @@ def Jacobian_matrix(model, x):
         repeats.append(1)
     
     x_hat = x.unsqueeze(0).repeat(tuple(repeats))
+    #print(f'x.shape={x.shape}, x_hat.shape={x_hat.shape}')
     x_hat.requires_grad = True
     model.computing_p(True)
     y, log_p, log_det = model(x_hat)
     
-    v = torch.diag(torch.ones(dim)).reshape((dim, *x.shape))
+    v = torch.diag(torch.ones(dim)).reshape((y.shape))
     grad = INN.utilities.vjp(y, x_hat, v)[0]
     
-    return grad.detach(), log_det.detach()
+    return grad.detach().reshape(y.shape), log_det.detach()
+
+def TestJacobian(model, shape, th=1e-6):
+    model.eval()
+    J, logdet = Jacobian_matrix(model, x=torch.randn(shape))
+    #print(J.shape)
+    log_det_J = torch.log(torch.abs(torch.det(J)))
+    print(f'J={log_det_J:.10f}, estimated={torch.mean(logdet):.10f}', end=' , ')
+    diff = nn.L1Loss()(log_det_J, torch.mean(logdet))
+    if abs(diff / log_det_J) <= th:
+        print('pass')
+    else:
+        print(f'estimation error is too big (relative loss={abs(diff / log_det_J):.8f})')
+
+'''
+########################################################################
+                            Start Tests
+########################################################################
+'''
+
+print('#'*8 + ' Nonlinear (RealNVP) ' + '#'*8)
+model = INN.Nonlinear(5)
+TestJacobian(model, shape=5)
+
+print('#'*8 + ' Nonlinear (NICE) ' + '#'*8)
+model = INN.Sequential(INN.Nonlinear(5), INN.Nonlinear(5, method='NICE'))
+TestJacobian(model, shape=5)
+
+print('#'*8 + ' Nonlinear (iResNet) ' + '#'*8)
+model = INN.Sequential(INN.Nonlinear(5), INN.Nonlinear(5, method='iResNet'))
+TestJacobian(model, shape=5)
+
+print('#'*8 + ' Conv1d (RealNVP, NICE) ' + '#'*8)
+model = INN.Sequential(INN.Conv1d(5, kernel_size=1, method='RealNVP'),
+                       INN.Conv1d(5, kernel_size=1, method='NICE'),
+                       INN.Reshape(shape_in=(5,8), shape_out=(40,)))
+TestJacobian(model, shape=(5, 8))
+
+print('#'*8 + ' 1x1 Conv1d ' + '#'*8)
+model = INN.Sequential(INN.Conv1d(5, kernel_size=1, method='RealNVP'),
+                       INN.Linear1d(5),
+                       INN.Reshape(shape_in=(5,8), shape_out=(40,)))
+TestJacobian(model, shape=(5, 8))
+
+print('#'*8 + ' BatchNorm1d (Linear) ' + '#'*8)
+model = INN.BatchNorm1d(5)
+model.running_var *= torch.exp(torch.randn(1))
+TestJacobian(model, shape=(5,))
+
+print('#'*8 + ' BatchNorm1d (1d) ' + '#'*8)
+model = INN.Sequential(#INN.Conv1d(5, kernel_size=1, method='RealNVP'),
+                       INN.BatchNorm1d(5),
+                       INN.Reshape(shape_in=(5,8), shape_out=(40,)))
+model[0].running_var *= torch.exp(torch.randn(1))
+TestJacobian(model, shape=(5, 8))

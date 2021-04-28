@@ -139,9 +139,22 @@ class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
         INNAbstract.INNModule.__init__(self)
         nn.BatchNorm1d.__init__(self, num_features=dim, affine=False)
         self.requires_grad = requires_grad
+    
+    def _scale(self, x):
+        '''The scale factor of x to compute Jacobian'''
+        if len(x.shape) == 2:
+            return 1
+
+        s = 1
+        for dim in x.shape[2:]:
+            s *= dim
+        return s
 
     def forward(self, x, log_p=0, log_det_J=0):
-        
+        '''
+        Apply batch normalization to x
+        x.shape = [batch_size, dim, *]
+        '''
         if self.compute_p:
             if not self.training:
                 # if in self.eval()
@@ -155,15 +168,24 @@ class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
             x = super(BatchNorm1d, self).forward(x)
 
             log_det = -0.5 * torch.log(var + self.eps)
-            log_det = torch.sum(log_det, dim=-1)
+            log_det = torch.sum(log_det, dim=-1) * self._scale(x)
 
             return x, log_p, log_det_J + log_det
         else:
             return super(BatchNorm1d, self).forward(x)
     
     def inverse(self, y, **args):
+        '''
+        inverse y to un-batch-normed numbers
+        The shape of y can be:
+            a. Linear: [batch_size, dim]
+            b. n-d: [batch_size, dim, *]
+        '''
+        batch_size, dim = y.shape[0], y.shape[1]
         var = self.running_var + self.eps
         mean = self.running_mean
+        var = var.reshape(1, dim, *([1]*(len(y.shape) - 2)))
+        mean = mean.reshape(1, dim, *([1]*(len(y.shape) - 2)))
         x = y * torch.sqrt(var) + mean
         return x
 
