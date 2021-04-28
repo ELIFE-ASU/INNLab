@@ -4,6 +4,7 @@ from torch.nn.utils import spectral_norm
 import torch.nn.functional as F
 from INN.SpectralNormGouk import spectral_norm as spectral_norm_g
 import INN.INNAbstract as INNAbstract
+import numpy as np
 
 # compute v.Jacobian, source: https://github.com/jarrelscy/iResnet
 def vjp(ys, xs, v):
@@ -165,6 +166,38 @@ class NormalDistribution(INNAbstract.Distribution):
     
     def sample(self, shape):
         return torch.randn(shape)
+
+class LaplaceDistribution(INNAbstract.Distribution):
+    '''
+    Generate normal distribution and compute log probablity
+    '''
+    def __init__(self, mu=0, beta=1.0):
+        super(LaplaceDistribution, self).__init__()
+        self.beta = beta
+        self.A = np.log(2 * beta)
+        self.dist = torch.distributions.laplace.Laplace(mu, beta)
+    
+    def logp(self, x):
+        logps = self.dist.log_prob(x)
+
+        if len(x.shape) == 1:
+            # linear layer
+            raise Exception(f'The input must have a batch dimension, but got dim={x.shape}.')
+        if len(x.shape) == 2:
+            # [batch, dim]
+            return logps.sum(dim=-1)
+        if len(x.shape) == 3:
+            # [batch, channel, dim_1d], 1d conv
+            return logps.reshape(x.shape[0], -1).sum(dim=-1)
+        if len(x.shape) == 4:
+            # [batch, channel, dim_x, dim_y], 2d conv
+            return logps.reshape(x.shape[0], -1).sum(dim=-1)
+        
+        raise Exception(f'The input dimension should be 1,2,3, or 4, but got {len(x.shape)}.')
+    
+    def sample(self, shape):
+        return self.dist.sample(shape)
+
 
 
 def permutation_matrix(dim):
@@ -421,7 +454,7 @@ class default_net(nn.Module):
     
     def default_net(self, dim, k, activation_fn):
         if activation_fn == None:
-            ac = nn.LeakyReLU
+            ac = nn.SELU#nn.LeakyReLU
         else:
             ac = activation_fn
         
@@ -434,6 +467,8 @@ class default_net(nn.Module):
     def init_weights(self, m):
         nonlinearity = 'leaky_relu' # set to leaky_relu by default
 
+        if self.activation_fn is nn.LeakyReLU:
+            nonlinearity = 'leaky_relu'
         if self.activation_fn is nn.ReLU:
             nonlinearity = 'relu'
         if self.activation_fn is nn.SELU:
