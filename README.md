@@ -8,7 +8,7 @@
 
 | pytorch                      | iResNetLab                     |
 | ---------------------------- | ------------------------------ |
-| --- | `INN.Nonlinear(dim)` |
+| `nn.Linear()` + `nn.ReLU()` | `INN.Nonlinear(dim)` |
 | `nn.Conv1d(channel_in, channel_out, kernel_size)`| `INN.Conv1d(channel, kernel_size)` |
 | `nn.Conv2d(channel_in, channel_out, kernel_size)`| `INN.Conv2d(channel, kernel_size)` |
 | `nn.Sequential(*modules)`    | `INN.Sequential(*modules)` |
