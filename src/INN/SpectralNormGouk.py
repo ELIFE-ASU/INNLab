@@ -44,7 +44,7 @@ class SpectralNorm(object):
         else:
             sigma = module.sigma
         
-        return weight / sigma
+        return weight / sigma.to(weight.device)
 
     def remove(self, module):
         with torch.no_grad():

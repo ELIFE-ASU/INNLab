@@ -7,12 +7,8 @@ import torch
 import torch.nn as nn
 import INN.utilities as utilities
 import INN.INNAbstract as INNAbstract
-
-# for test only, reload for any changes
-import importlib
-importlib.reload(INNAbstract)
-importlib.reload(utilities)
-# end
+import INN.cnn as cnn
+import torch.nn.functional as F
 
 iResNetModule = INNAbstract.iResNetModule
 
@@ -92,26 +88,6 @@ class FCN(iResNetModule):
         return logdet
 
 
-class Conv1d(INNAbstract.Conv):
-    '''
-    1-d convolutional i-ResNet
-    '''
-    def __init__(self, channel, kernel_size, w=8, k=0.8, num_iter=1, num_n=3):
-        super(Conv1d, self).__init__(num_iter=num_iter, num_n=num_n)
-        
-        self.net = utilities.SNCov1d(channel, kernel_size, w=w, k=k)
-
-
-class Conv2d(INNAbstract.Conv):
-    '''
-    1-d convolutional i-ResNet
-    '''
-    def __init__(self, channel, kernel_size, w=8, k=0.8, num_iter=1, num_n=3):
-        super(Conv2d, self).__init__(num_iter=num_iter, num_n=num_n)
-        
-        self.net = utilities.SNCov2d(channel, kernel_size, w=w, k=k)
-
-
 class Sequential(nn.Sequential, INNAbstract.INNModule):
 
     def __init__(self, *args):
@@ -159,7 +135,7 @@ class PixelShuffle2d(INNAbstract.PixelShuffleModule):
 
 
 class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
-    def __init__(self, dim, requires_grad=False):
+    def __init__(self, dim, requires_grad=True):
         INNAbstract.INNModule.__init__(self)
         nn.BatchNorm1d.__init__(self, num_features=dim, affine=False)
         self.requires_grad = requires_grad
@@ -192,8 +168,8 @@ class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
         return x
 
 class Linear(utilities.InvertibleLinear):
-    def __init__(self, dim):
-        super(Linear, self).__init__(dim)
+    def __init__(self, dim, positive_s=False, eps=1e-8):
+        super(Linear, self).__init__(dim, positive_s=positive_s, eps=eps)
     
     def forward(self, x, log_p0=0, log_det_J=0):
         if len(x.shape) == 1:
@@ -363,3 +339,107 @@ class ResizeFeatures(INNAbstract.INNModule):
             y = torch.cat([y, z], dim=1)
         
         return y
+
+
+class Conv1d(INNAbstract.INNModule):
+    def __init__(self, channels, kernel_size, method='RealNVP', w=4, activation_fn=nn.ReLU, m=None, s=None, t=None, mask=None, k=0.8, num_iter=1, num_n=10):
+        super(Conv1d, self).__init__()
+
+        self.method = method
+        if method == 'NICE':
+            self.iresnet = False
+            self.f = cnn.Conv1dNICE(channels, kernel_size, w=w, activation_fn=activation_fn, m=m, mask=mask)
+        if method == 'RealNVP':
+            self.iresnet = False
+            self.f = cnn.Conv1dNVP(channels, kernel_size, w=w, activation_fn=activation_fn, s=s, t=t, mask=mask)
+        if method == 'iResNet':
+            self.iresnet = True
+            self.f = cnn.Conv1diResNet(channels, kernel_size, w=w, k=k, num_iter=num_iter, num_n=num_n)
+    
+    def forward(self, x, log_p0=0, log_det_J=0):
+        if not self.iresnet:
+            y = self.f(x)
+            log_det = self.f.logdet()
+            if self.compute_p:
+                return y, log_p0, log_det_J + log_det
+            else:
+                return y
+        else:
+            # special for i-ResNet
+            return self.f(x, log_p0, log_det_J)
+    
+    def inverse(self, x, **args):
+        if not self.iresnet:
+            return self.f.inverse(x)
+        else:
+            return self.f.inverse(x, **args)
+
+
+class Linear1d(INNAbstract.INNModule):
+    def __init__(self, num_feature, mat=None):
+        super(Linear1d, self).__init__()
+        if mat is None:
+            self.mat = utilities.PLUMatrix(num_feature)
+        else:
+            self.mat = mat
+    
+    def _to_conv_weight(self, m):
+        return m.unsqueeze(-1)
+
+    def weight(self):
+        return self._to_conv_weight(self.mat.W())
+    
+    def weight_inv(self):
+        return self._to_conv_weight(self.mat.inv_W())
+    
+    def _x_scale(self, x):
+        return x.shape[-1]
+
+    def logdet(self, x):
+        scale = self._x_scale(x)
+        logdet = self.mat.logdet()
+
+        return logdet * scale
+    
+    def conv(self, x):
+        return F.conv1d(x, self.weight())
+    
+    def forward(self, x, log_p0=0, log_det_J=0):
+        if self.compute_p:
+            log_det = self.logdet(x)
+            return self.conv(x), log_p0, log_det_J + log_det
+        else:
+            return self.conv(x)
+    
+    def inverse(self, y, **args):
+        return F.conv1d(y, self.weight_inv())
+
+
+class Linear2d(Linear1d):
+    def __init__(self, num_feature, mat=None):
+        super(Linear2d, self).__init__(num_feature, mat)
+    
+    def _to_conv_weight(self, m):
+        return m.unsqueeze(-1).unsqueeze(-1)
+
+    def _x_scale(self, x):
+        batch_size, feature, x_dim, y_dim = x.shape
+        return x_dim * y_dim
+    
+    def conv(self, x):
+        return F.conv2d(x, self.weight())
+
+
+class Reshape(INNAbstract.INNModule):
+    def __init__(self, shape_in, shape_out):
+        super(Reshape, self).__init__()
+        self.reshaper = utilities.reshape(shape_in, shape_out)
+    
+    def forward(self, x, log_p0=0, log_det_J=0):
+        if self.compute_p:
+            return self.reshaper(x), log_p0, log_det_J
+        else:
+            return self.reshaper(x)
+    
+    def inverse(self, y, **args):
+        return self.reshaper.inverse(y)

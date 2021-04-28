@@ -174,15 +174,16 @@ def permutation_matrix(dim):
         x[i, (i+1) % (dim)] = 1
     return x
 
-
-class InvertibleLinear(INNAbstract.INNModule):
+class PLUMatrix(nn.Module):
     '''
-    Invertible Linear
+    PLU decomposition for invertible matrix
     ref: https://arxiv.org/pdf/1807.03039.pdf section 3.2
     '''
-    def __init__(self, dim):
-        super(InvertibleLinear, self).__init__()
+    def __init__(self, dim, positive_s=False, eps=1e-8):
+        super(PLUMatrix, self).__init__()
 
+        self.positive_s = positive_s
+        self.eps = eps
         self._initialize(dim)
 
     def _initialize(self, dim):
@@ -190,7 +191,10 @@ class InvertibleLinear(INNAbstract.INNModule):
         self.P = P
         self._L = nn.Parameter(L)
         self._U = nn.Parameter(torch.triu(U, diagonal=1))
-        self.log_s = nn.Parameter(torch.log(torch.abs(torch.diag(U))))
+        if self.positive_s:
+            self.log_s = nn.Parameter(torch.log(torch.abs(torch.diag(U))))
+        else:
+            self.log_s = nn.Parameter(torch.diag(U))
 
         self.I = torch.diag(torch.ones(dim))
         return
@@ -214,7 +218,10 @@ class InvertibleLinear(INNAbstract.INNModule):
         return torch.triu(self._U, diagonal=1)
     
     def W(self):
-        s = torch.diag(torch.exp(self.log_s))
+        if self.positive_s:
+            s = torch.diag(torch.exp(self.log_s))
+        else:
+            s = torch.diag(self.log_s)
         return self.P.to(self._L.device) @ self.L() @ (self.U() + s)
     
     def inv_W(self):
@@ -224,14 +231,29 @@ class InvertibleLinear(INNAbstract.INNModule):
         return inv_w
     
     def logdet(self):
-        return torch.sum(self.log_s)
+        if self.positive_s:
+            return torch.sum(self.log_s)
+        else:
+            return torch.sum(torch.log(torch.abs(self.log_s) + self.eps))
+
+class InvertibleLinear(INNAbstract.INNModule):
+    '''
+    Invertible Linear
+    ref: https://arxiv.org/pdf/1807.03039.pdf section 3.2
+    '''
+    def __init__(self, dim, positive_s=False, eps=1e-8):
+        super(InvertibleLinear, self).__init__()
+        self.mat = PLUMatrix(dim, positive_s=positive_s, eps=eps)
+    
+    def logdet(self):
+        return self.mat.logdet()
 
     def forward(self, x):
-        weight = self.W()
+        weight = self.mat.W()
         return F.linear(x, weight)
     
     def inverse(self, y):
-        return F.linear(y, self.inv_W())
+        return F.linear(y, self.mat.inv_W())
 
 
 class real_nvp_element(INNAbstract.INNModule):
@@ -413,7 +435,7 @@ class default_net(nn.Module):
         nonlinearity = 'leaky_relu' # set to leaky_relu by default
 
         if self.activation_fn is nn.ReLU:
-            nonlinearity = 'leaky_relu'
+            nonlinearity = 'relu'
         if self.activation_fn is nn.SELU:
             nonlinearity = 'selu'
         if self.activation_fn is nn.Tanh:
@@ -428,3 +450,41 @@ class default_net(nn.Module):
     
     def forward(self, x):
         return self.net(x)
+
+
+class reshape(nn.Module):
+    '''
+    Invertible reshape
+    
+    * shape_in: shape of the input. Note that batch_size don't need to be included.
+    * shape_out: shape of the output
+    '''
+    def __init__(self, shape_in, shape_out):
+        super(reshape, self).__init__()
+        
+        #self._check_shape(shape_in, shape_out)
+        self.shape_in = shape_in
+        self.shape_out = shape_out
+    
+    def _check_shape(self, shape_in, shape_out):
+        '''
+        Check if the in and out are in the same size
+        '''
+        s_in = 1
+        for d in shape_in:
+            s_in *= d
+        s_out = 1
+        for d in shape_out:
+            s_out *= d
+        
+        if s_in != s_out:
+            raise ValueError(f'shape_in and shape_out must have the same size, but got {s_in} and {s_out}.')
+        return
+    
+    def forward(self, x):
+        batch_size = x.shape[0]
+        return x.reshape(batch_size, *self.shape_out)
+    
+    def inverse(self, x):
+        batch_size = x.shape[0]
+        return x.reshape(batch_size, *self.shape_in)

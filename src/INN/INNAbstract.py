@@ -15,7 +15,6 @@ class INNModule(nn.Module):
         self.compute_p = b
         for sub_m in self.modules():
             if isinstance(sub_m, INNModule):
-                #sub_m.computing_p(b)
                 sub_m.compute_p = b
 
 # i-ResNet Modules
