@@ -479,8 +479,9 @@ class default_net(nn.Module):
             nonlinearity = 'sigmoid'
         
         if type(m) == nn.Linear:
-            # doing Kaiming initialization
-            torch.nn.init.kaiming_normal_(m.weight.data, nonlinearity=nonlinearity)
+            # doing xavier initialization
+            # NOTE: Kaiming initialization will make the output too high, which leads to nan
+            torch.nn.init.xavier_uniform_(m.weight.data)
             torch.nn.init.zeros_(m.bias.data)
     
     def forward(self, x):

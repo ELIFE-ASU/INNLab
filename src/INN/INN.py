@@ -284,7 +284,7 @@ class Linear(utilities.InvertibleLinear):
             log_det = self.logdet(x)
         if len(x.shape) == 2:
             # [batch, dim]
-            log_det = self.logdet(x).repeat(x.shape[0])
+            log_det = self.logdet(x)
         x = super(Linear, self).forward(x)
 
         if self.compute_p:
