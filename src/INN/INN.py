@@ -170,7 +170,8 @@ class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
         return s
     
     def var(self, x):
-        return x.transpose(0,1).contiguous().view(self.num_features, -1).var(1, unbiased=False)
+        x_ = x.transpose(0,1).contiguous().view(self.num_features, -1)
+        return x_.var(1, unbiased=False)
     
     def mean(self, x):
         return x.transpose(0,1).contiguous().view(self.num_features, -1).mean(1)

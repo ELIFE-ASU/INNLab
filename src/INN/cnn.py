@@ -173,14 +173,21 @@ class ConvNVP(CouplingConv):
     1-d invertible convolution layer by NICE method
     TODO: inverse error is too large
     '''
-    def __init__(self, channels, kernel_size, w=4, activation_fn=nn.ReLU, s=None, t=None, mask=None):
+    def __init__(self, channels, kernel_size, w=4, activation_fn=nn.ReLU, s=None, t=None, mask=None, clip=True, clip_n=1.0):
         super(ConvNVP, self).__init__(num_feature=channels, mask=mask)
         self.log_s = s
         self.t = t
         self.log_det_ = 0
+        self.clip = clip
+        self.clip_n = clip_n
+    
+    def clipping_log_s(self, logs):
+        return torch.tanh(logs / self.clip_n) * self.clip_n
     
     def s(self, x):
         logs = self.log_s(x)
+        if self.clip:
+            logs = self.clipping_log_s(logs)
         return torch.exp(logs), logs
     
     def forward(self, x):
@@ -225,8 +232,8 @@ class Conv1dNVP(ConvNVP):
     1-d invertible convolution layer by NICE method
     TODO: inverse error is too large
     '''
-    def __init__(self, channels, kernel_size, w=4, activation_fn=nn.ReLU, s=None, t=None, mask=None):
-        super(Conv1dNVP, self).__init__(channels, kernel_size, w=w, activation_fn=activation_fn, s=s, t=t, mask=mask)
+    def __init__(self, channels, kernel_size, w=4, activation_fn=nn.ReLU, s=None, t=None, mask=None, clip=True, clip_n=1.0):
+        super(Conv1dNVP, self).__init__(channels, kernel_size, w=w, activation_fn=activation_fn, s=s, t=t, mask=mask, clip=clip, clip_n=clip_n)
         if s is None:
             self.log_s = _default_1d_coupling_function(channels, kernel_size, activation_fn, w=w)
         else:
@@ -244,8 +251,8 @@ class Conv2dNVP(ConvNVP):
     1-d invertible convolution layer by NICE method
     TODO: inverse error is too large
     '''
-    def __init__(self, channels, kernel_size, w=4, activation_fn=nn.ReLU, s=None, t=None, mask=None):
-        super(Conv2dNVP, self).__init__(channels, kernel_size, w=w, activation_fn=activation_fn, s=s, t=t, mask=mask)
+    def __init__(self, channels, kernel_size, w=4, activation_fn=nn.ReLU, s=None, t=None, mask=None, clip=True, clip_n=1.0):
+        super(Conv2dNVP, self).__init__(channels, kernel_size, w=w, activation_fn=activation_fn, s=s, t=t, mask=mask, clip=clip, clip_n=clip_n)
         if s is None:
             self.log_s = _default_2d_coupling_function(channels, kernel_size, activation_fn, w=w)
         else:
