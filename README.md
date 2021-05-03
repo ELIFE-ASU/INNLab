@@ -1,10 +1,8 @@
 # INNLab
 
-![](https://img.shields.io/static/v1?label=pytorch&message=≥1.8.1&color=yellow)
+![](https://img.shields.io/static/v1?label=pytorch&message=≥1.6&color=yellow)
 
 > A pytorch package for Invertible Neural Networks (INN)
-
-[TOC]
 
 
 
