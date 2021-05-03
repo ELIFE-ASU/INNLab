@@ -356,7 +356,7 @@ class Nonlinear(INNAbstract.INNModule):
     '''
     Nonlinear invertible block
     '''
-    def __init__(self, dim, method='RealNVP', m=None, mask=None, k=4, activation_fn=None, **args):
+    def __init__(self, dim, method='NICE', m=None, mask=None, k=4, activation_fn=None, **args):
         super(Nonlinear, self).__init__()
         
         self.method = method
@@ -451,7 +451,7 @@ class ResizeFeatures(INNAbstract.INNModule):
 
 
 class Conv1d(INNAbstract.INNModule):
-    def __init__(self, channels, kernel_size, method='RealNVP', w=4, activation_fn=nn.ReLU, m=None, s=None, t=None, mask=None, k=0.8, num_iter=1, num_n=10):
+    def __init__(self, channels, kernel_size, method='NICE', w=4, activation_fn=nn.ReLU, m=None, s=None, t=None, mask=None, k=0.8, num_iter=1, num_n=10):
         super(Conv1d, self).__init__()
 
         self.method = method
@@ -485,7 +485,7 @@ class Conv1d(INNAbstract.INNModule):
 
 
 class Conv2d(INNAbstract.INNModule):
-    def __init__(self, channels, kernel_size, method='RealNVP', w=4, activation_fn=nn.ReLU, m=None, s=None, t=None, mask=None, k=0.8, num_iter=1, num_n=10):
+    def __init__(self, channels, kernel_size, method='NICE', w=4, activation_fn=nn.ReLU, m=None, s=None, t=None, mask=None, k=0.8, num_iter=1, num_n=10):
         super(Conv2d, self).__init__()
 
         self.method = method
