@@ -387,7 +387,7 @@ class ResizeFeatures(INNAbstract.INNModule):
     '''
     Resize for n-d input, include linear or multi-channel inputs
     '''
-    def __init__(self, feature_in, feature_out, dist='normal', eps=1e-8):
+    def __init__(self, feature_in, feature_out, dist='normal'):
         super(ResizeFeatures, self).__init__()
         self.feature_in = feature_in
         self.feature_out = feature_out
@@ -398,7 +398,7 @@ class ResizeFeatures(INNAbstract.INNModule):
             self.dist = dist
         
         self.initialized = False
-        self.mu_var = utilities.MuVar(feature_in, feature_out, eps)
+        self.mu_var = utilities.MuVar(feature_in, feature_out)
     
     def resize(self, x, feature_in, feature_out):
         '''
@@ -408,13 +408,13 @@ class ResizeFeatures(INNAbstract.INNModule):
         '''
         if len(x.shape) == 1:
             # [feature_in]
-            if x.shape[0] != self.feature_in:
+            if x.shape[0] != feature_in:
                 raise Exception(f'Expect to get {self.feature_in} features, but got {x.shape[0]}.')
             y, z = x[:feature_out], x[feature_out:]
         
         if len(x.shape) >= 2:
             # [batch_size, feature_in, *]
-            if x.shape[1] != self.feature_in:
+            if x.shape[1] != feature_in:
                 raise Exception(f'Expect to get {self.feature_in} features, but got {x.shape[1]}.')
             y, z = x[:, :feature_out], x[:, feature_out:]
         
@@ -437,11 +437,14 @@ class ResizeFeatures(INNAbstract.INNModule):
             1. [feature_in]
             2. [batch_size, feature_in, *]
         '''
+        mu, var, log_det = self.mu_var(y)
+
         if len(y.shape) == 1:
             # [feature_in]
             if y.shape[0] != self.feature_out:
                 raise Exception(f'Expect to get {self.feature_out} features, but got {y.shape[0]}.')
             z = self.dist.sample(self.feature_in-self.feature_out).to(y.device)
+            z = z * var + mu
             y = torch.cat([y, z])
         
         if len(y.shape) >= 2:
@@ -451,6 +454,7 @@ class ResizeFeatures(INNAbstract.INNModule):
             shape = list(y.shape)
             shape[1] = self.feature_in-self.feature_out
             z = self.dist.sample(shape).to(y.device)
+            z = z * var + mu
             y = torch.cat([y, z], dim=1)
         
         return y

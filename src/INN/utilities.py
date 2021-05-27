@@ -553,7 +553,7 @@ class MuVarVector(_MuVar):
         self._initialize_weights()
     
     def _initialize_weights(self):
-        nn.init.xavier_uniform_(self.linear_mu.weight)
+        nn.init.zeros_(self.linear_mu.weight)
         nn.init.zeros_(self.linear_mu.bias)
         nn.init.zeros_(self.linear_log_var.weight)
         nn.init.zeros_(self.linear_log_var.bias)
@@ -568,12 +568,12 @@ class MuVarVector(_MuVar):
 class MuVar1d(_MuVar):
     def __init__(self, feature_in, feature_out):
         super(MuVar1d, self).__init__(feature_in, feature_out)
-        self.conv_mu = nn.Conv1d(in_channels=self.feature_y, out_channels=self.feature_z, kernel_size=3)
-        self.conv_log_var = nn.Conv1d(in_channels=self.feature_y, out_channels=self.feature_z, kernel_size=3)
+        self.conv_mu = nn.Conv1d(in_channels=self.feature_y, out_channels=self.feature_z, kernel_size=3, padding=1)
+        self.conv_log_var = nn.Conv1d(in_channels=self.feature_y, out_channels=self.feature_z, kernel_size=3, padding=1)
         self._initialize_weights()
     
     def _initialize_weights(self):
-        nn.init.xavier_uniform_(self.conv_mu.weight)
+        nn.init.zeros_(self.conv_mu.weight)
         nn.init.zeros_(self.conv_mu.bias)
         nn.init.zeros_(self.conv_log_var.weight)
         nn.init.zeros_(self.conv_log_var.bias)
@@ -589,12 +589,12 @@ class MuVar1d(_MuVar):
 class MuVar2d(_MuVar):
     def __init__(self, feature_in, feature_out):
         super(MuVar2d, self).__init__(feature_in, feature_out)
-        self.conv_mu = nn.Conv2d(in_channels=self.feature_y, out_channels=self.feature_z, kernel_size=3)
-        self.conv_log_var = nn.Conv2d(in_channels=self.feature_y, out_channels=self.feature_z, kernel_size=3)
+        self.conv_mu = nn.Conv2d(in_channels=self.feature_y, out_channels=self.feature_z, kernel_size=3, padding=1)
+        self.conv_log_var = nn.Conv2d(in_channels=self.feature_y, out_channels=self.feature_z, kernel_size=3, padding=1)
         self._initialize_weights()
     
     def _initialize_weights(self):
-        nn.init.xavier_uniform_(self.conv_mu.weight)
+        nn.init.zeros_(self.conv_mu.weight)
         nn.init.zeros_(self.conv_mu.bias)
         nn.init.zeros_(self.conv_log_var.weight)
         nn.init.zeros_(self.conv_log_var.bias)
