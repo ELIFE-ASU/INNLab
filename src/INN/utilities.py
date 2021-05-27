@@ -524,3 +524,116 @@ class reshape(nn.Module):
     def inverse(self, x):
         batch_size = x.shape[0]
         return x.reshape(batch_size, *self.shape_in)
+
+
+class _MuVar(nn.Module):
+    r'''
+    Abstract class of MuVar
+    '''
+    def __init__(self, feature_in, feature_out, eps=1e-8):
+        super(_MuVar, self).__init__()
+        self.feature_in = feature_in
+        self.feature_out = feature_out
+        self.feature_y = feature_out
+        self.feature_z = feature_in - feature_out
+        self.eps = eps
+    
+    def _initialize_weights(self):
+        raise NotImplementedError('initialization not implemented!')
+    
+    def exp_var(self, log_var):
+        return self.eps + torch.exp(log_var)
+
+
+class MuVarVector(_MuVar):
+    def __init__(self, feature_in, feature_out):
+        super(MuVarVector, self).__init__(feature_in, feature_out)
+        self.linear_mu = nn.Linear(self.feature_y, self.feature_z)
+        self.linear_log_var = nn.Linear(self.feature_y, self.feature_z)
+        self._initialize_weights()
+    
+    def _initialize_weights(self):
+        nn.init.zeros_(self.linear_mu.weight)
+        nn.init.zeros_(self.linear_mu.bias)
+        nn.init.zeros_(self.linear_log_var.weight)
+        nn.init.zeros_(self.linear_log_var.bias)
+
+    def forward(self, y):
+        mu = self.linear_mu(y)
+        var = self.exp_var(self.linear_log_var(y))
+        log_det = -1 * torch.log(var).sum(dim=-1)
+        return mu, var, log_det
+
+
+class MuVar1d(_MuVar):
+    def __init__(self, feature_in, feature_out):
+        super(MuVar1d, self).__init__(feature_in, feature_out)
+        self.conv_mu = nn.Conv1d(in_channels=self.feature_y, out_channels=self.feature_z, kernel_size=3, padding=1)
+        self.conv_log_var = nn.Conv1d(in_channels=self.feature_y, out_channels=self.feature_z, kernel_size=3, padding=1)
+        self._initialize_weights()
+    
+    def _initialize_weights(self):
+        nn.init.zeros_(self.conv_mu.weight)
+        nn.init.zeros_(self.conv_mu.bias)
+        nn.init.zeros_(self.conv_log_var.weight)
+        nn.init.zeros_(self.conv_log_var.bias)
+    
+    def forward(self, y):
+        mu = self.conv_mu(y)
+        var = self.exp_var(self.conv_log_var(y))
+        batch = var.shape[0]
+        log_det = -1 * torch.log(var).reshape(batch, -1).sum(dim=-1)
+        return mu, var, log_det
+
+
+class MuVar2d(_MuVar):
+    def __init__(self, feature_in, feature_out):
+        super(MuVar2d, self).__init__(feature_in, feature_out)
+        self.conv_mu = nn.Conv2d(in_channels=self.feature_y, out_channels=self.feature_z, kernel_size=3, padding=1)
+        self.conv_log_var = nn.Conv2d(in_channels=self.feature_y, out_channels=self.feature_z, kernel_size=3, padding=1)
+        self._initialize_weights()
+    
+    def _initialize_weights(self):
+        nn.init.zeros_(self.conv_mu.weight)
+        nn.init.zeros_(self.conv_mu.bias)
+        nn.init.zeros_(self.conv_log_var.weight)
+        nn.init.zeros_(self.conv_log_var.bias)
+    
+    def forward(self, y):
+        mu = self.conv_mu(y)
+        var = self.exp_var(self.conv_log_var(y))
+        batch = var.shape[0]
+        log_det = -1 * torch.log(var).reshape(batch, -1).sum(dim=-1)
+        return mu, var, log_det
+
+
+class MuVar(nn.Module):
+    r'''
+    Estimate mean and var when doing feature rescale.
+    '''
+    def __init__(self, feature_in, feature_out):
+        super(MuVar, self).__init__()
+        self.initialized = False
+        self.feature_in = feature_in
+        self.feature_out = feature_out
+    
+    def _initialize(self, y):
+        # initialize mu and var based on shape of y
+        batch, *shape = y.shape
+        num_features = shape[0]
+        self.initialized = True
+        if len(shape) == 1:
+            self.mu_var = MuVarVector(self.feature_in, self.feature_out)
+            return
+        if len(shape) == 2:
+            self.mu_var = MuVar1d(self.feature_in, self.feature_out)
+            return
+        if len(shape) == 3:
+            self.mu_var = MuVar2d(self.feature_in, self.feature_out)
+            return
+    
+    def forward(self, y):
+        if not self.initialized:
+            self._initialize(y)
+        
+        return self.mu_var(y)
