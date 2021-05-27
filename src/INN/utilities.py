@@ -524,3 +524,78 @@ class reshape(nn.Module):
     def inverse(self, x):
         batch_size = x.shape[0]
         return x.reshape(batch_size, *self.shape_in)
+
+
+class _MuVar(nn.Mudule):
+    r'''
+    Abstract class of MuVar
+    '''
+    def __init__(self, num_feature, eps=1e-8):
+        super(_MuVar, self).__init__()
+        self.num_feature = num_feature
+        self.eps = eps
+    
+    def _initialize_weights(self):
+        raise NotImplementedError('initialization not implemented!')
+    
+    def exp_var(self, log_var):
+        return self.eps + torch.exp(log_var)
+
+
+class MuVarVector(_MuVar):
+    def __init__(self, num_feature):
+        super(MuVarVector, self).__init__(num_feature)
+        self.linear_mu = nn.Linear(num_feature, num_feature)
+        self.linear_log_var = nn.Linear(num_feature, num_feature)
+        self._initialize_weights()
+    
+    def _initialize_weights(self):
+        nn.init.xavier_uniform_(self.linear_mu.weight)
+        nn.init.zeros_(self.linear_mu.bias)
+        nn.init.zeros_(self.linear_log_var.weight)
+        nn.init.zeros_(self.linear_log_var.bias)
+
+    def forward(self, y):
+        mu = self.linear_mu(y)
+        var = self.exp_var(self.linear_log_var(y))
+        log_det = np.log(var).sum(dim=-1)
+        return mu, var, log_det
+
+
+class MuVar1d(_MuVar):
+    def __init__(self, num_feature):
+        super(MuVar1d, self).__init__(num_feature)
+
+
+class MuVar2d(_MuVar):
+    def __init__(self, num_feature):
+        super(MuVar2d, self).__init__(num_feature)
+
+
+class MuVar(nn.Module):
+    r'''
+    Estimate mean and var when doing feature rescale.
+    '''
+    def __init__(self):
+        super(MuVar, self).__init__()
+        self.initialized = False
+    
+    def _initialize(self, y):
+        # initialize mu and var based on shape of y
+        batch, *shape = y.shape
+        num_features = shape[0]
+        if len(shape) == 1:
+            self.mu_var = MuVarVector(num_features)
+            return
+        if len(shape) == 2:
+            self.mu_var = MuVar1d(num_features)
+            return
+        if len(shape) == 3:
+            self.mu_var = MuVar2d(num_features)
+            return
+    
+    def forward(self, y):
+        if not self.initialized:
+            self._initialize(y)
+        
+        return self.mu_var(y)
