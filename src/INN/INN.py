@@ -387,7 +387,7 @@ class ResizeFeatures(INNAbstract.INNModule):
     '''
     Resize for n-d input, include linear or multi-channel inputs
     '''
-    def __init__(self, feature_in, feature_out, dist='normal'):
+    def __init__(self, feature_in, feature_out, dist='normal', conditional=False):
         super(ResizeFeatures, self).__init__()
         self.feature_in = feature_in
         self.feature_out = feature_out
@@ -398,6 +398,7 @@ class ResizeFeatures(INNAbstract.INNModule):
             self.dist = dist
         
         self.initialized = False
+        self.conditional = conditional
         self.mu_var = utilities.MuVar(feature_in, feature_out)
     
     def resize(self, x, feature_in, feature_out):
@@ -422,9 +423,13 @@ class ResizeFeatures(INNAbstract.INNModule):
 
     def forward(self, x, log_p0=0, log_det_J=0):
         y, z = self.resize(x, self.feature_in, self.feature_out)
-
-        mu, var, log_det = self.mu_var(y)
-        z = (z - mu) / var
+        
+        if self.conditional:
+            mu, var, log_det = self.mu_var(y)
+            z = (z - mu) / var
+        else:
+            log_det = 0
+        
         if self.compute_p:
             p = self.dist.logp(z)
             return y, log_p0 + p, log_det_J + log_det
