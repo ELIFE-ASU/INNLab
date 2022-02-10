@@ -21,6 +21,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     package_dir={"": "src"},
-    packages=['INN'],#setuptools.find_packages(where="src/INN"),
+    packages=['INN', 'INN.ResFlow'],#setuptools.find_packages(where="src/INN"),
     python_requires=">=3.6",
 )
