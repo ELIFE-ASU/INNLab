@@ -1,6 +1,7 @@
 from .ResidualFlow import ResidualFlow
 import torch.nn as nn
-from torch.nn.utils import spectral_norm
+#from torch.nn.utils import spectral_norm
+from ..SpectralNormGouk import spectral_norm
 from .utilities import LipSwish
 import warnings
 
@@ -35,8 +36,6 @@ class Conv2d(ResidualFlow):
         
         k = 2 * kernel_r + 1
         padding = kernel_r
-
-        warnings.warn("Warning: spectral norm here is using the wrong version. ")
 
         block = nn.Sequential(spectral_norm(nn.Conv2d(in_feature, hidden, k, padding=padding)),
                               LipSwish(),

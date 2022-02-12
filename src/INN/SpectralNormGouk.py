@@ -1,11 +1,72 @@
 """
-Copy from: https://github.com/jarrelscy/iResnet/blob/master/SpectralNormGouk.py
 Spectral Normalization from https://arxiv.org/abs/1802.05957
 """
 import torch
 from torch.nn.functional import normalize
 from torch.nn.parameter import Parameter
 import torch.nn.functional as F
+
+
+class forward_function:
+    def __init__(self, weight):
+        self.weight = weight
+    def __call__(self, inp, weight=None):
+        if weight is None:
+            weight = self.weight
+        return F.linear(inp, weight)
+
+class iteration_function:
+    def __init__(self, weight):
+        self.weight = weight
+    def __call__(self, inp, weight=None):
+        if weight is None:
+            weight = self.weight
+        return F.linear(F.linear(inp, weight), weight.transpose(1,0))
+
+class forward_function2:
+    def __init__(self, functions, weight, s, g, d, p):
+        self.weight = weight
+        self.s = s
+        self.g = g
+        self.d = d
+        self.p = p
+        self.functions = functions
+
+    def __call__(self, inp, weight=None, s=None, g=None, d=None, p=None):
+        if weight is None:
+            weight = self.weight
+        if s is None:
+            s = self.s
+        if g is None:
+            g = self.g
+        if d is None:
+            d = self.d
+        if p is None:
+            p = self.p
+        return self.functions[0](inp, weight, stride=s, padding=p, dilation=d, groups=g)
+
+class iteration_function2:
+    def __init__(self, functions, weight, s, g, d, p):
+        self.weight = weight
+        self.s = s
+        self.g = g
+        self.d = d
+        self.p = p
+        self.functions = functions
+
+    def __call__(self, inp, weight=None, s=None, g=None, d=None, p=None):
+        if weight is None:
+            weight = self.weight
+        if s is None:
+            s = self.s
+        if g is None:
+            g = self.g
+        if d is None:
+            d = self.d
+        if p is None:
+            p = self.p
+        return self.functions[1](self.functions[0](inp, weight, stride=s, padding=p, dilation=d, groups=g), 
+               weight, stride=s, padding=p, dilation=d, groups=g)
 
 class SpectralNorm(object):
     # Invariant before and after each forward call:
@@ -44,7 +105,7 @@ class SpectralNorm(object):
         else:
             sigma = module.sigma
         
-        return weight / sigma.to(weight.device)
+        return weight / sigma
 
     def remove(self, module):
         with torch.no_grad():
@@ -77,8 +138,8 @@ class SpectralNorm(object):
             }
         
         if isinstance(module, torch.nn.Linear):  
-            module.forward_function = lambda inp,weight=weight: F.linear(inp, weight)
-            module.iteration_function = lambda inp,weight=weight: F.linear(F.linear(inp, weight), weight.transpose(1,0))
+            module.forward_function = forward_function(weight)
+            module.iteration_function = iteration_function(weight)
         elif isinstance(module, (torch.nn.ConvTranspose1d,
                                torch.nn.ConvTranspose2d,
                                torch.nn.ConvTranspose3d,
@@ -91,9 +152,8 @@ class SpectralNorm(object):
             d = module.dilation
             p = module.padding
             functions = functions_dict[module.__class__ ]
-            module.forward_function = lambda inp,weight=weight,s=s,g=g,d=d,p=p: functions[0](inp, weight, stride=s, padding=p, dilation=d, groups=g)            
-            module.iteration_function = lambda inp,weight=weight,s=s,g=g,d=d,p=p: functions[1](functions[0](inp, weight, stride=s, padding=p, dilation=d, groups=g), 
-                                                                                             weight, stride=s, padding=p, dilation=d, groups=g)
+            module.forward_function = forward_function2(functions, weight, s, g, d, p)
+            module.iteration_function = iteration_function2(functions, weight, s, g, d, p)
             
             
         with torch.no_grad():
@@ -154,9 +214,11 @@ class SpectralNormStateDictHook(object):
 
 def spectral_norm(module, name='weight', n_power_iterations=1, magnitude=1.0,eps=1e-12):
     r"""Applies spectral normalization to a parameter in the given module.
+
     .. math::
          \mathbf{W} = \dfrac{\mathbf{W}}{\sigma(\mathbf{W})} \\
          \sigma(\mathbf{W}) = \max_{\mathbf{h}: \mathbf{h} \ne 0} \dfrac{\|\mathbf{W} \mathbf{h}\|_2}{\|\mathbf{h}\|_2}
+
     Spectral normalization stabilizes the training of discriminators (critics)
     in Generaive Adversarial Networks (GANs) by rescaling the weight tensor
     with spectral norm :math:`\sigma` of the weight matrix calculated using
@@ -164,8 +226,11 @@ def spectral_norm(module, name='weight', n_power_iterations=1, magnitude=1.0,eps
     than 2, it is reshaped to 2D in power iteration method to get spectral
     norm. This is implemented via a hook that calculates spectral norm and
     rescales weight before every :meth:`~Module.forward` call.
+
     See `Spectral Normalization for Generative Adversarial Networks`_ .
+
     .. _`Spectral Normalization for Generative Adversarial Networks`: https://arxiv.org/abs/1802.05957
+
     Args:
         module (nn.Module): containing module
         name (str, optional): name of weight parameter
@@ -176,13 +241,17 @@ def spectral_norm(module, name='weight', n_power_iterations=1, magnitude=1.0,eps
         dim (int, optional): dimension corresponding to number of outputs,
             the default is 0, except for modules that are instances of
             ConvTranspose1/2/3d, when it is 1
+
     Returns:
         The original module with the spectal norm hook
+
     Example::
+
         >>> m = spectral_norm(nn.Linear(20, 40))
         Linear (20 -> 40)
         >>> m.weight_u.size()
         torch.Size([20])
+
     """    
     SpectralNorm.apply(module, name, n_power_iterations, magnitude, eps)
     return module
@@ -190,9 +259,11 @@ def spectral_norm(module, name='weight', n_power_iterations=1, magnitude=1.0,eps
 
 def remove_spectral_norm(module, name='weight'):
     r"""Removes the spectral normalization reparameterization from a module.
+
     Args:
         module (nn.Module): containing module
         name (str, optional): name of weight parameter
+
     Example:
         >>> m = spectral_norm(nn.Linear(40, 10))
         >>> remove_spectral_norm(m)
