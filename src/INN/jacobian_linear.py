@@ -20,6 +20,8 @@ class jacobian_linear(INN.INNAbstract.INNModule):
     works for low dimensions of vectors (O(n^3) time complexity)
     '''
     def __init__(self, dim_in, dim_out, bias=True):
+        if dim_out > dim_in:
+            raise ValueError(f'dim_out ({dim_out}) should be less than or equal to dim_in ({dim_in})!')
         super(jacobian_linear, self).__init__()
         self.linear = nn.Linear(dim_in, dim_out, bias=bias)
         self.dim_out = dim_out
@@ -60,6 +62,9 @@ class JacobianLinear(jacobian_linear):
 
     def inverse(self, y, **args):
         return super(JacobianLinear, self).inverse(y)
+    
+    def __repr__(self):
+        return f'JacobianLinear({self.dim_in}, {self.dim_out})'
 
 
 

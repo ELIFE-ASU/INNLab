@@ -10,6 +10,7 @@ class Linear(ResidualFlow):
     def __init__(self, dim, hidden=None, n_hidden=2, lipschitz_constrain=0.9, mem_efficient=True, est_steps=5):
         if hidden is None:
             hidden = dim * 8
+            # for design hidden network width, see https://arxiv.org/abs/2010.15327
         
         block = [spectral_norm(nn.Linear(dim, hidden)),
                               LipSwish()]
