@@ -7,7 +7,7 @@ import warnings
 
 
 class Linear(ResidualFlow):
-    def __init__(self, dim, hidden=None, n_hidden=1, lipschitz_constrain=0.9, mem_efficient=True, est_steps=5):
+    def __init__(self, dim, hidden=None, n_hidden=2, lipschitz_constrain=0.9, mem_efficient=True, est_steps=5):
         if hidden is None:
             hidden = dim * 4
         
