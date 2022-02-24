@@ -7,7 +7,7 @@ setuptools.setup(
     name="INNLab",
     version="0.5.3",
     author="Yanbo Zhang",
-    author_email="zhangybspm@gmail.com",
+    author_email="Zhang.Yanbo@asu.edu",
     description="A package for invertible neural networks",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -20,7 +20,7 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    package_dir={"": "src"},
+    #package_dir={"": "src"},
     packages=['INN', 'INN.ResFlow'],#setuptools.find_packages(where="src/INN"),
     python_requires=">=3.6",
 )

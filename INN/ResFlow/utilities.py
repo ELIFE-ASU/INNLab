@@ -1,19 +1,30 @@
 import torch
 import torch.nn as nn
 from torch.nn.utils import spectral_norm
+import torch.nn.functional as F
 import numpy as np
 
 
 class LipSwish(nn.Module):
-    def __init__(self, beta=1.0):
+    def __init__(self):
         r'''LipSwish activation function.
         See details in https://arxiv.org/abs/1906.02735
         '''
         super(LipSwish, self).__init__()
-        self.beta = beta
+        self.beta = nn.Parameter(torch.tensor([0.5]))
     
     def forward(self, x):
-        return x * torch.sigmoid(x * self.beta) / 1.1
+        return (x * torch.sigmoid(x * F.softplus(self.beta))).div_(1.1)
+
+
+class LeakyLipSwish(LipSwish):
+    def __init__(self, negative_slope=0.1):
+        super(LeakyLipSwish, self).__init__()
+        self.negative_slope = negative_slope
+    
+    def forward(self, x):
+        s = self.negative_slope
+        return (x * (torch.sigmoid(x * F.softplus(self.beta)) + s)).div_(1.1) / (1 + s)
 
 
 def vjp(ys, xs, v):
