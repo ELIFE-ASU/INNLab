@@ -13,14 +13,13 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/Zhangyanbo/INNLab",
     project_urls={
-        "Bug Tracker": "https://github.com/Zhangyanbo/INNLab/issues",
+        "Bug Tracker": "https://github.com/ELIFE-ASU/INNLab/issues",
     },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    #package_dir={"": "src"},
-    packages=['INN', 'INN.ResFlow'],#setuptools.find_packages(where="src/INN"),
+    packages=['INN', 'INN.ResFlow'],
     python_requires=">=3.6",
 )
