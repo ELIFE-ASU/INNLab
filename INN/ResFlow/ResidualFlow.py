@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from .utilities import ShiftedGeometric, vjp
 from .BackwardInForward import MemoryEfficientLogDetEstimator
+from ..INNAbstract import INNModule
 
 
 def Jacobian(x, gx, N, max_n=100):
@@ -44,7 +45,7 @@ class _lipschitz_constrained(nn.Module):
         return self.module(x) * self.lipschitz_constrain
 
 
-class ResidualFlow(nn.Module):
+class ResidualFlow(INNModule):
     def __init__(self, residual, lipschitz_constrain=0.9, mem_efficient=True, est_steps=5):
         super(ResidualFlow, self).__init__()
         self.g = _lipschitz_constrained(residual, lipschitz_constrain=lipschitz_constrain)
@@ -67,20 +68,25 @@ class ResidualFlow(nn.Module):
         return logdet
     
     def forward(self, x, log_p=None, log_det=None):
-        if not x.requires_grad:
-            x.requires_grad = True
+        if self.compute_p:
+            if not x.requires_grad:
+                x.requires_grad = True
 
-        if self.mem_efficient:
-            gx, logdet = MemoryEfficientLogDetEstimator().apply(Jacobian, self.g, x, self.est_steps, *list(self.g.parameters()))
+            if self.mem_efficient:
+                gx, logdet = MemoryEfficientLogDetEstimator().apply(Jacobian, self.g, x, self.est_steps, *list(self.g.parameters()))
+            else:
+                gx = self.g(x)
+                logdet = Jacobian(x, gx, N)
+            y = x + gx
+
+            if log_det is not None:
+                logdet += log_det
+            
+            return y, log_p, logdet
         else:
-            gx = self.g(x)
-            logdet = Jacobian(x, gx, N)
-        y = x + gx
+            y = x + self.g(x)
+            return y
 
-        if log_det is not None:
-            logdet += log_det
-
-        return y, log_p, logdet
     
     def inverse(self, y, num_iter=100):
         '''
