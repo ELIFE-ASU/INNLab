@@ -20,6 +20,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    packages=['INN', 'INN.ResFlow', 'INN.NICEModel'],
+    packages=['INN', 'INN.ResFlow', 'INN.NICEModel', 'INN.CouplingModels'],
     python_requires=">=3.6",
 )
