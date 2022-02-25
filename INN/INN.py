@@ -10,6 +10,7 @@ import INN.INNAbstract as INNAbstract
 import INN.cnn as cnn
 import torch.nn.functional as F
 import INN.pixel_shuffle_1d as ps
+from .ResFlow import ResFlowLinear, ResFlowConv2d, ResidualFlow
 
 iResNetModule = INNAbstract.iResNetModule
 
@@ -352,12 +353,12 @@ def _default_dict(key, _dict, default):
     else:
         return default
 
-class Nonlinear(INNAbstract.INNModule):
+class Nonlinear_old(INNAbstract.INNModule):
     '''
     Nonlinear invertible block
     '''
     def __init__(self, dim, method='NICE', m=None, mask=None, k=4, activation_fn=None, **args):
-        super(Nonlinear, self).__init__()
+        super(Nonlinear_old, self).__init__()
         
         self.method = method
         if method == 'NICE':
@@ -382,6 +383,14 @@ class Nonlinear(INNAbstract.INNModule):
     
     def inverse(self, y, **args):
         return self.block.inverse(y, **args)
+
+def Nonlinear(dim, method, **kwargs):
+    if method == 'ResFlow':
+        return ResFlowLinear(dim, **kwargs)
+    elif method == 'NICE' or method == 'RealNVP':
+        return Nonlinear_old(dim, method=method, **kwargs)
+    else:
+        raise NotImplementedError
 
 class ResizeFeatures(INNAbstract.INNModule):
     '''
