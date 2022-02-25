@@ -10,7 +10,7 @@ import INN.INNAbstract as INNAbstract
 import INN.cnn as cnn
 import torch.nn.functional as F
 import INN.pixel_shuffle_1d as ps
-from .ResFlow import ResFlowLinear, ResFlowConv2d, ResidualFlow
+from .ResFlow import NonlinearResFlow, Conv2dResFlow, Conv1dResFlow, ResidualFlow
 
 iResNetModule = INNAbstract.iResNetModule
 
@@ -386,7 +386,7 @@ class Nonlinear_old(INNAbstract.INNModule):
 
 def Nonlinear(dim, method, **kwargs):
     if method == 'ResFlow':
-        return ResFlowLinear(dim, **kwargs)
+        return NonlinearResFlow(dim, **kwargs)
     elif method == 'NICE' or method == 'RealNVP':
         return Nonlinear_old(dim, method=method, **kwargs)
     else:
@@ -474,9 +474,9 @@ class ResizeFeatures(INNAbstract.INNModule):
         return y
 
 
-class Conv1d(INNAbstract.INNModule):
+class Conv1d_old(INNAbstract.INNModule):
     def __init__(self, channels, kernel_size, method='NICE', w=4, activation_fn=nn.ReLU, m=None, s=None, t=None, mask=None, k=0.8, num_iter=1, num_n=10):
-        super(Conv1d, self).__init__()
+        super(Conv1d_old, self).__init__()
 
         self.method = method
         if method == 'NICE':
@@ -508,9 +508,17 @@ class Conv1d(INNAbstract.INNModule):
             return self.f.inverse(x, **args)
 
 
-class Conv2d(INNAbstract.INNModule):
+def Conv1d(channels, kernel_size, method='NICE', **args):
+    if method == 'ResFlow':
+        r = kernel_size // 2
+        return Conv1dResFlow(channels, r, **args)
+    elif method == 'NICE' or method == 'RealNVP':
+        return Conv1d_old(channels, kernel_size, method=method, **args)
+
+
+class Conv2d_old(INNAbstract.INNModule):
     def __init__(self, channels, kernel_size, method='NICE', w=4, activation_fn=nn.ReLU, m=None, s=None, t=None, mask=None, k=0.8, num_iter=1, num_n=10):
-        super(Conv2d, self).__init__()
+        super(Conv2d_old, self).__init__()
 
         self.method = method
         if method == 'NICE':
@@ -540,6 +548,14 @@ class Conv2d(INNAbstract.INNModule):
             return self.f.inverse(x)
         else:
             return self.f.inverse(x, **args)
+
+
+def Conv2d(channels, kernel_size, method='NICE', **args):
+    if method == 'ResFlow':
+        r = kernel_size // 2
+        return Conv2dResFlow(channels, r, **args)
+    elif method == 'NICE' or method == 'RealNVP':
+        return Conv2d_old(channels, kernel_size, method=method, **args)
 
 
 class Linear1d(INNAbstract.INNModule):

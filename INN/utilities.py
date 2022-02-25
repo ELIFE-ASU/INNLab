@@ -343,7 +343,7 @@ class real_nvp_element(INNAbstract.INNModule):
 
         t = self.f_t(b * x)
 
-        y = b * x + (1 - b) * (x * s + t)
+        y = b * x + (1 - b) * (x * (s + self.eps) + t)
 
         return y, log_det_J
     

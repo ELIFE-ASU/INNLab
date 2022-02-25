@@ -1,6 +1,6 @@
 from INN.INN import *
 import INN.utilities as utilities
 from .jacobian_linear import JacobianLinear
-from .ResFlow import ResFlowLinear, ResFlowConv2d, ResidualFlow
+from .ResFlow import NonlinearResFlow, Conv2dResFlow, Conv1dResFlow, ResidualFlow
 from .SpectralNormGouk import spectral_norm, remove_spectral_norm
 from . import NICEModel

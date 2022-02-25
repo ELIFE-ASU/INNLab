@@ -15,7 +15,8 @@ def inverse_test(model, x):
     x_hat = model.inverse(y).detach()
 
     diff = torch.mean((x - x_hat) ** 2) ** 0.5
-    #print(f'diff={diff.item()}')
+    if not diff.item() < 1e-5:
+        print(f'diff={diff.item()}')
     assert diff.item() < 1e-5
 
 def forward_test(model, x):
