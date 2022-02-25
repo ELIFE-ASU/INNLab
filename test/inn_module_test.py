@@ -1,4 +1,5 @@
 import torch
+import unittest
 
 def forward_test_normal(model, x):
     model.computing_p(True)
@@ -20,3 +21,26 @@ def inverse_test(model, x):
 def forward_test(model, x):
     forward_test_normal(model, x)
     forward_test_not_compute_p(model, x)
+
+
+class BasicTest(unittest.TestCase):
+    def forward(self, model, x):
+        forward_test(model, x)
+    
+    def inverse(self, model, x):
+        inverse_test(model, x)
+    
+    def cpu_test(self, model, x):
+        model.cpu()
+        x = x.cpu()
+        self.forward(model, x)
+        self.inverse(model, x)
+    
+    def cuda_test(self, model, x, dev='cuda:0'):
+        if not torch.cuda.is_available():
+            return 0
+        
+        model.to(dev)
+        x = x.to(dev)
+        self.forward(model, x)
+        self.inverse(model, x)
