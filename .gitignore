@@ -12,6 +12,7 @@ test.ipynb
 *.so
 
 # Distribution / packaging
+tests/
 .Python
 build/
 develop-eggs/
