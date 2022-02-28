@@ -1,5 +1,6 @@
 from INN.INN import *
 from .Sequential import Sequential
+from .BatchNorm import BatchNorm1d, BatchNorm2d
 import INN.utilities as utilities
 #from .jacobian_linear import JacobianLinear
 from .Linears import JacobianLinear
