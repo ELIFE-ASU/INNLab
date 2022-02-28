@@ -6,7 +6,6 @@ from .inn_module_test import forward_test, inverse_test
 class TestNonlinear(unittest.TestCase):
     def test_forward(self):
         model = INN.Nonlinear(dim=2, method='NICE')
-        assert not isinstance(model, INN.Nonlinear_old)
         x = torch.Tensor([[1, 2], [3, 4]])
 
         forward_test(model, x)

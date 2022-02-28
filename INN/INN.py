@@ -12,6 +12,7 @@ import torch.nn.functional as F
 import INN.pixel_shuffle_1d as ps
 from ._ResFlow_modules import NonlinearResFlow, Conv2dResFlow, Conv1dResFlow, ResidualFlow
 from ._NICE_modules import NonlinearNICE, Conv1dNICE, Conv2dNICE
+from ._RealNVP_modules import NonlinearRealNVP
 
 iResNetModule = INNAbstract.iResNetModule
 
@@ -299,29 +300,6 @@ class Linear(utilities.InvertibleLinear):
         return super(Linear, self).inverse(y)
 
 
-class RealNVP(INNAbstract.INNModule):
-
-    def __init__(self, dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1, activation_fn=None):
-        super(RealNVP, self).__init__()
-        if (f_log_s is None) and (f_t is None):
-            log_s = utilities.default_net(dim, k, activation_fn)#self.default_net(dim, k)
-            t = utilities.default_net(dim, k, activation_fn)#self.default_net(dim, k)
-            self.net = utilities.combined_real_nvp(dim, log_s, t, mask, clip)
-        else:
-            self.net = utilities.combined_real_nvp(dim, f_log_s, f_t, mask, clip)
-    
-    def forward(self, x, log_p0=0, log_det_J_=0):
-        x, log_det = self.net(x)
-        if self.compute_p:
-            return x, log_p0, log_det + log_det_J_
-        else:
-            return x
-    
-    def inverse(self, y, **args):
-        y = self.net.inverse(y)
-        return y
-
-
 class NICE(INNAbstract.INNModule):
 
     def __init__(self, dim=None, m=None, mask=None, k=4, activation_fn=None):
@@ -354,36 +332,6 @@ def _default_dict(key, _dict, default):
     else:
         return default
 
-class Nonlinear_old(INNAbstract.INNModule):
-    '''
-    Nonlinear invertible block
-    '''
-    def __init__(self, dim, method='NICE', m=None, mask=None, k=4, activation_fn=None, **args):
-        super(Nonlinear_old, self).__init__()
-        
-        self.method = method
-        if method == 'NICE':
-            self.block = NICE(dim, m=m, mask=mask, k=k, activation_fn=activation_fn)
-        if method == 'RealNVP':
-            clip = _default_dict('clip', args, 1)
-            f_log_s = _default_dict('f_log_s', args, None)
-            f_t = _default_dict('f_t', args, None)
-
-            self.block = RealNVP(dim=dim, f_log_s=f_log_s, f_t=f_t, k=k, mask=mask, clip=clip, activation_fn=activation_fn)
-        if method == 'iResNet':
-            g = _default_dict('g', args, None)
-            beta = _default_dict('beta', args, 0.8)
-            w = _default_dict('w', args, 8)
-            num_iter = _default_dict('num_iter', args, 1)
-            num_n = _default_dict('num_n', args, 10)
-            self.block = iResNet(dim=dim, g=g, beta=beta, w=w, num_iter=num_iter, num_n=num_n)
-            
-    
-    def forward(self, x, log_p0=0, log_det_J=0):
-        return self.block(x, log_p0, log_det_J)
-    
-    def inverse(self, y, **args):
-        return self.block.inverse(y, **args)
 
 def Nonlinear(dim, method, **kwargs):
     if method == 'ResFlow':
@@ -391,7 +339,8 @@ def Nonlinear(dim, method, **kwargs):
     elif method == 'NICE':
         return NonlinearNICE(dim, **kwargs)
     elif method == 'RealNVP':
-        return Nonlinear_old(dim, method=method, **kwargs)
+        #return Nonlinear_old(dim, method=method, **kwargs)
+        return NonlinearRealNVP(dim, **kwargs)
     else:
         raise NotImplementedError
 
