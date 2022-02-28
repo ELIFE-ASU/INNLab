@@ -74,13 +74,6 @@ class Linear(utilities.InvertibleLinear):
         return super(Linear, self).inverse(y)
 
 
-def _default_dict(key, _dict, default):
-    if key in _dict:
-        return _dict[key]
-    else:
-        return default
-
-
 def Nonlinear(dim, method='NICE', **kwargs):
     if method == 'ResFlow':
         return NonlinearResFlow(dim, **kwargs)
