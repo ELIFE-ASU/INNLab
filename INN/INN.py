@@ -10,7 +10,8 @@ import INN.INNAbstract as INNAbstract
 import INN.cnn as cnn
 import torch.nn.functional as F
 import INN.pixel_shuffle_1d as ps
-from .ResFlow import NonlinearResFlow, Conv2dResFlow, Conv1dResFlow, ResidualFlow
+from ._ResFlow_modules import NonlinearResFlow, Conv2dResFlow, Conv1dResFlow, ResidualFlow
+from ._NICE_modules import NonlinearNICE, Conv1dNICE, Conv2dNICE
 
 iResNetModule = INNAbstract.iResNetModule
 
@@ -387,7 +388,9 @@ class Nonlinear_old(INNAbstract.INNModule):
 def Nonlinear(dim, method, **kwargs):
     if method == 'ResFlow':
         return NonlinearResFlow(dim, **kwargs)
-    elif method == 'NICE' or method == 'RealNVP':
+    elif method == 'NICE':
+        return NonlinearNICE(dim, **kwargs)
+    elif method == 'RealNVP':
         return Nonlinear_old(dim, method=method, **kwargs)
     else:
         raise NotImplementedError
@@ -512,7 +515,9 @@ def Conv1d(channels, kernel_size, method='NICE', **args):
     if method == 'ResFlow':
         r = kernel_size // 2
         return Conv1dResFlow(channels, r, **args)
-    elif method == 'NICE' or method == 'RealNVP':
+    elif method == 'NICE':
+        return Conv1dNICE(channels, kernel_size, **args)
+    elif method == 'RealNVP':
         return Conv1d_old(channels, kernel_size, method=method, **args)
 
 
@@ -554,7 +559,9 @@ def Conv2d(channels, kernel_size, method='NICE', **args):
     if method == 'ResFlow':
         r = kernel_size // 2
         return Conv2dResFlow(channels, r, **args)
-    elif method == 'NICE' or method == 'RealNVP':
+    elif method == 'NICE':
+        return Conv2dNICE(channels, kernel_size)
+    elif method == 'RealNVP':
         return Conv2d_old(channels, kernel_size, method=method, **args)
 
 

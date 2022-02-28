@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from ..INNAbstract import INNModule
+from INN.INNAbstract import INNModule
 
 
 class CouplingConv(INNModule):

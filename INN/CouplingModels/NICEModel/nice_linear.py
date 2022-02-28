@@ -1,6 +1,6 @@
 # NICE with 1d input
 from .NICE_base import NICE
-from ..INNAbstract import INNModule
+from INN.INNAbstract import INNModule
 from . import utils
 
 

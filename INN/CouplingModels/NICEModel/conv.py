@@ -1,4 +1,4 @@
-from ..CouplingModels import CouplingConv, _default_1d_coupling_function, _default_2d_coupling_function
+from .. import CouplingConv, _default_1d_coupling_function, _default_2d_coupling_function
 import torch
 import torch.nn as nn
 

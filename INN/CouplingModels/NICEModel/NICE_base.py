@@ -1,5 +1,5 @@
 # Basic NICE architecture
-from ..INNAbstract import INNModule
+from INN.INNAbstract import INNModule
 from .utils import linear_mask
 
 
