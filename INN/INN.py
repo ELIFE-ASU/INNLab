@@ -9,9 +9,12 @@ import INN.utilities as utilities
 import INN.INNAbstract as INNAbstract
 #import torch.nn.functional as F
 import INN.pixel_shuffle_1d as ps
-from ._ResFlow_modules import NonlinearResFlow, Conv2dResFlow, Conv1dResFlow, ResidualFlow
-from ._NICE_modules import NonlinearNICE, Conv1dNICE, Conv2dNICE
-from ._RealNVP_modules import NonlinearRealNVP, Conv1dRealNVP, Conv2dRealNVP
+#from ._ResFlow_modules import NonlinearResFlow, Conv2dResFlow, Conv1dResFlow, ResidualFlow
+from .ResFlow import NonlinearResFlow, Conv2dResFlow, Conv1dResFlow, ResidualFlow
+#from ._NICE_modules import NonlinearNICE, Conv1dNICE, Conv2dNICE
+from .CouplingModels.NICEModel import NonlinearNICE, Conv1dNICE, Conv2dNICE
+#from ._RealNVP_modules import NonlinearRealNVP, Conv1dRealNVP, Conv2dRealNVP
+from .CouplingModels.RealNVP import NonlinearRealNVP, Conv1dRealNVP, Conv2dRealNVP
 
 
 class PixelShuffle2d(INNAbstract.PixelShuffleModule):
