@@ -1,4 +1,5 @@
 from INN.INN import *
+from .Sequential import Sequential
 import INN.utilities as utilities
 #from .jacobian_linear import JacobianLinear
 from .Linears import JacobianLinear
