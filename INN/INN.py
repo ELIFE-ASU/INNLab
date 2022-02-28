@@ -7,95 +7,18 @@ import torch
 import torch.nn as nn
 import INN.utilities as utilities
 import INN.INNAbstract as INNAbstract
-import INN.cnn as cnn
-import torch.nn.functional as F
+#import torch.nn.functional as F
 import INN.pixel_shuffle_1d as ps
 from ._ResFlow_modules import NonlinearResFlow, Conv2dResFlow, Conv1dResFlow, ResidualFlow
 from ._NICE_modules import NonlinearNICE, Conv1dNICE, Conv2dNICE
-from ._RealNVP_modules import NonlinearRealNVP
+from ._RealNVP_modules import NonlinearRealNVP, Conv1dRealNVP, Conv2dRealNVP
 
 iResNetModule = INNAbstract.iResNetModule
-
-class FCN(iResNetModule):
-    '''
-    i-ResNet which g is a fully connected network
-    '''
-    def __init__(self, dim_in, dim_out, beta=0.8, w=8, num_iter=1, num_n=3):
-        '''
-        beta: the Lip constant, beta < 1
-        w: the width of the hidden layer
-        '''
-        super(FCN, self).__init__()
-        if dim_out > dim_in:
-            raise Exception(f"dim_out ({dim_out}) cannnot be larger than dim_in ({dim_in}).")
-        
-        self.dim_out = dim_out
-        self.dim_in = dim_in
-        self.num_iter = num_iter
-        self.num_n = num_n
-        
-        self.net = utilities.SNFCN(dim_in, w=w, k=beta)
-        self.noise = utilities.NormalDistribution()
-    
-    def g(self, x):
-        return self.net(x)
-    
-    def P(self, y):
-        '''
-        Normal distribution
-        '''
-        return self.noise(y)
-    
-    def inject_noise(self, y):
-        # inject noise to y
-        if self.dim_out == self.dim_in:
-            return y
-        if len(y.shape) == 1:
-            noise = self.noise.sample(self.dim_in - self.dim_out)
-            y_hat = torch.cat([y, noise])
-            return y_hat.to(y.device)
-        if len(y.shape) == 2:
-            noise = self.noise.sample((y.shape[0], self.dim_in - self.dim_out))
-            y_hat = torch.cat([y, noise], dim=-1)
-            return y_hat.to(y.device)
-        raise Exception(f"The input shape must be 1-d or 2-d, but got input.shape={y.shape}.")
-    
-    def cut(self, x):
-        '''
-        Split output into two parts: y, z
-        input: [dim_in] or [batch, dim_in]
-        '''
-        if len(x.shape) == 1:
-            y = x[:self.dim_out]
-            z = x[self.dim_out:]
-            return y, z
-        
-        if len(x.shape) == 2:
-            y = x[:, :self.dim_out]
-            z = x[:, self.dim_out:]
-            return y, z
-        raise Exception(f"The input shape must be 1-d or 2-d, but got input.shape={x.shape}.")
-    
-    def logdet(self, x, g):
-        self.eval()
-        logdet = 0
-        for i in range(self.num_iter):
-            v = torch.randn(x.shape) # random noise
-            v = v.to(x.device)
-            w = v
-            for k in range(1, self.num_n):
-                w = utilities.vjp(g, x, w)[0]
-                logdet += (-1)**(k+1) * torch.sum(w * v, dim=-1) / k
-        
-        logdet /= self.num_iter
-        self.train()
-        return logdet
 
 
 class Sequential(nn.Sequential, INNAbstract.INNModule):
 
     def __init__(self, *args):
-        #super(Sequential, self).__init__(*args)
         INNAbstract.INNModule.__init__(self)
         nn.Sequential.__init__(self, *args)
     
@@ -300,32 +223,6 @@ class Linear(utilities.InvertibleLinear):
         return super(Linear, self).inverse(y)
 
 
-class NICE(INNAbstract.INNModule):
-
-    def __init__(self, dim=None, m=None, mask=None, k=4, activation_fn=None):
-        super(NICE, self).__init__()
-        
-        if m is None:
-            m_ = utilities.default_net(dim, k, activation_fn)
-            self.net = utilities.NICE(dim, m=m_, mask=mask)
-        else:
-            self.net = utilities.NICE(dim, m=m, mask=mask)
-    
-    def forward(self, x, log_p0=0, log_det_J=0):
-        x = self.net(x)
-        if self.compute_p:
-            return x, log_p0, log_det_J
-        else:
-            return x
-    
-    def inverse(self, y, **args):
-        y = self.net.inverse(y)
-        return y
-
-class iResNet(utilities.iResNet):
-    def __init__(self, dim=None, g=None, beta=0.8, w=8, num_iter=1, num_n=10):
-        super(iResNet, self).__init__(dim, g, beta, w, num_iter, num_n)
-
 def _default_dict(key, _dict, default):
     if key in _dict:
         return _dict[key]
@@ -425,40 +322,6 @@ class ResizeFeatures(INNAbstract.INNModule):
         return y
 
 
-class Conv1d_old(INNAbstract.INNModule):
-    def __init__(self, channels, kernel_size, method='NICE', w=4, activation_fn=nn.ReLU, m=None, s=None, t=None, mask=None, k=0.8, num_iter=1, num_n=10):
-        super(Conv1d_old, self).__init__()
-
-        self.method = method
-        if method == 'NICE':
-            self.iresnet = False
-            self.f = cnn.Conv1dNICE(channels, kernel_size, w=w, activation_fn=activation_fn, m=m, mask=mask)
-        if method == 'RealNVP':
-            self.iresnet = False
-            self.f = cnn.Conv1dNVP(channels, kernel_size, w=w, activation_fn=activation_fn, s=s, t=t, mask=mask)
-        if method == 'iResNet':
-            self.iresnet = True
-            self.f = cnn.Conv1diResNet(channels, kernel_size, w=w, k=k, num_iter=num_iter, num_n=num_n)
-    
-    def forward(self, x, log_p0=0, log_det_J=0):
-        if not self.iresnet:
-            y = self.f(x)
-            log_det = self.f.logdet()
-            if self.compute_p:
-                return y, log_p0, log_det_J + log_det
-            else:
-                return y
-        else:
-            # special for i-ResNet
-            return self.f(x, log_p0, log_det_J)
-    
-    def inverse(self, x, **args):
-        if not self.iresnet:
-            return self.f.inverse(x)
-        else:
-            return self.f.inverse(x, **args)
-
-
 def Conv1d(channels, kernel_size, method='NICE', **args):
     if method == 'ResFlow':
         r = kernel_size // 2
@@ -466,41 +329,8 @@ def Conv1d(channels, kernel_size, method='NICE', **args):
     elif method == 'NICE':
         return Conv1dNICE(channels, kernel_size, **args)
     elif method == 'RealNVP':
-        return Conv1d_old(channels, kernel_size, method=method, **args)
-
-
-class Conv2d_old(INNAbstract.INNModule):
-    def __init__(self, channels, kernel_size, method='NICE', w=4, activation_fn=nn.ReLU, m=None, s=None, t=None, mask=None, k=0.8, num_iter=1, num_n=10):
-        super(Conv2d_old, self).__init__()
-
-        self.method = method
-        if method == 'NICE':
-            self.iresnet = False
-            self.f = cnn.Conv2dNICE(channels, kernel_size, w=w, activation_fn=activation_fn, m=m, mask=mask)
-        if method == 'RealNVP':
-            self.iresnet = False
-            self.f = cnn.Conv2dNVP(channels, kernel_size, w=w, activation_fn=activation_fn, s=s, t=t, mask=mask)
-        if method == 'iResNet':
-            self.iresnet = True
-            self.f = cnn.Conv2diResNet(channels, kernel_size, w=w, k=k, num_iter=num_iter, num_n=num_n)
-    
-    def forward(self, x, log_p0=0, log_det_J=0):
-        if not self.iresnet:
-            y = self.f(x)
-            log_det = self.f.logdet()
-            if self.compute_p:
-                return y, log_p0, log_det_J + log_det
-            else:
-                return y
-        else:
-            # special for i-ResNet
-            return self.f(x, log_p0, log_det_J)
-    
-    def inverse(self, x, **args):
-        if not self.iresnet:
-            return self.f.inverse(x)
-        else:
-            return self.f.inverse(x, **args)
+        #return Conv1d_old(channels, kernel_size, method=method, **args)
+        return Conv1dRealNVP(channels, kernel_size, **args)
 
 
 def Conv2d(channels, kernel_size, method='NICE', **args):
@@ -510,7 +340,8 @@ def Conv2d(channels, kernel_size, method='NICE', **args):
     elif method == 'NICE':
         return Conv2dNICE(channels, kernel_size)
     elif method == 'RealNVP':
-        return Conv2d_old(channels, kernel_size, method=method, **args)
+        #return Conv2d_old(channels, kernel_size, method=method, **args)
+        return Conv2dRealNVP(channels, kernel_size, **args)
 
 
 class Linear1d(INNAbstract.INNModule):
