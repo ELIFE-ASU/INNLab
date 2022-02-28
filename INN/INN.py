@@ -333,13 +333,12 @@ def _default_dict(key, _dict, default):
         return default
 
 
-def Nonlinear(dim, method, **kwargs):
+def Nonlinear(dim, method='NICE', **kwargs):
     if method == 'ResFlow':
         return NonlinearResFlow(dim, **kwargs)
     elif method == 'NICE':
         return NonlinearNICE(dim, **kwargs)
     elif method == 'RealNVP':
-        #return Nonlinear_old(dim, method=method, **kwargs)
         return NonlinearRealNVP(dim, **kwargs)
     else:
         raise NotImplementedError

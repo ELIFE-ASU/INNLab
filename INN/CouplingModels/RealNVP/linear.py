@@ -6,6 +6,8 @@ from .. import utils as coupling_utils
 class NonlinearRealNVP(INNModule):
     def __init__(self, dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1, activation_fn=None):
         super(NonlinearRealNVP, self).__init__()
+        self.dim = dim
+        
         if f_log_s is None:
             f_log_s = coupling_utils.default_nonlinear_net(dim, k, activation_fn)
         if f_t is None:
@@ -25,4 +27,4 @@ class NonlinearRealNVP(INNModule):
         return y
     
     def __repr__(self):
-        return 'NonlinearRealNVP()'
+        return f'NonlinearRealNVP(dim={self.dim})'
