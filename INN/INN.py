@@ -13,7 +13,7 @@ from ._ResFlow_modules import NonlinearResFlow, Conv2dResFlow, Conv1dResFlow, Re
 from ._NICE_modules import NonlinearNICE, Conv1dNICE, Conv2dNICE
 from ._RealNVP_modules import NonlinearRealNVP, Conv1dRealNVP, Conv2dRealNVP
 
-iResNetModule = INNAbstract.iResNetModule
+#iResNetModule = INNAbstract.iResNetModule
 
 
 class Sequential(nn.Sequential, INNAbstract.INNModule):
