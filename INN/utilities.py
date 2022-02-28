@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn.utils import spectral_norm
 import torch.nn.functional as F
-from INN.SpectralNormGouk import spectral_norm as spectral_norm_g
+from INN.ResFlow.SpectralNormGouk import spectral_norm as spectral_norm_g
 import INN.INNAbstract as INNAbstract
 import numpy as np
 

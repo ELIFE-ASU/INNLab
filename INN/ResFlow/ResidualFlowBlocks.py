@@ -1,7 +1,7 @@
 from .ResidualFlow import ResidualFlow
 import torch.nn as nn
 #from torch.nn.utils import spectral_norm
-from ..SpectralNormGouk import spectral_norm
+from .SpectralNormGouk import spectral_norm
 from .utilities import LipSwish
 import warnings
 
