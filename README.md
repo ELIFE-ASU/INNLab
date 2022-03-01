@@ -1,12 +1,22 @@
 ![](./images/INNLab.png)
 
-# INNLab
+--------------------------------------------------------------------------------
+
 
 ![](https://img.shields.io/static/v1?label=pytorch&message=≥1.6&color=yellow)
 
-> A pytorch package for Invertible Neural Networks (INN)
+INNLab is a Python package that provides easy access of using Invertible Neural Networks (INNs). In this package, we included following INN practices:
 
+* NICE
+* RealNVP
+* Residual Flow
 
+* Other supporting blocks (resize, reshape, invertible batchnrom, invertible pixel shuffle, etc.)
+
+We will not only providing strictly invertible modules, but also including some semi-invertible modules:
+
+* (developing) Noisy kernels: for increasing the representation power
+* (developing) InfoGAN: the network **not restricted at all**, and you can control the distribution of the embedding. However, invertibility is not guaranteed. Sampling may also have problem of mode collapse.
 
 # Analogy to PyTorch
 
