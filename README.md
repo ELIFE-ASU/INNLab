@@ -1,3 +1,5 @@
+![](./images/INNLab.png)
+
 # INNLab
 
 ![](https://img.shields.io/static/v1?label=pytorch&message=≥1.6&color=yellow)
