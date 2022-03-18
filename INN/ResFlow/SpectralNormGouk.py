@@ -129,7 +129,8 @@ class SpectralNorm(object):
                     u = u.clone()
                 sv = self.l2norm(module.forward_function(u, weight=weight)) / self.l2norm(u)      
                 sigma = F.relu(sv / self.magnitude - 1.0) + 1.0
-                module.sigma = sigma
+                #module.sigma = sigma
+                module.register_buffer('sigma', sigma)
         else:
             sigma = module.sigma
         
@@ -202,6 +203,7 @@ class SpectralNorm(object):
         module.register_buffer(fn.name + "_u", u)
         sigma = torch.tensor(1).to(weight.device)
         module.register_buffer(fn.name + "_sigma", sigma)
+        module.register_buffer('sigma', torch.tensor(1.))
 
         module.register_forward_pre_hook(fn)
 

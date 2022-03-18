@@ -2,6 +2,8 @@ import unittest
 import INN
 import torch
 from .inn_module_test import forward_test, inverse_test, BasicTest
+from torch.nn.utils import spectral_norm
+import torch.nn as nn
 
 
 class TestNonlinear_expe(BasicTest):
@@ -85,3 +87,54 @@ class TestConv2d(unittest.TestCase):
         x = torch.ones(16, 2, 16, 16)
         
         inverse_test(model, x)
+
+
+class TestGoukSigma(unittest.TestCase):
+    def test_reload(self):
+        model = INN.Sequential(INN.NonlinearResFlow(2), INN.NonlinearResFlow(2))
+        x = torch.ones(10, 2)
+        y, _, _ = model(x)
+        model.eval()
+        state_dict = model.state_dict()
+
+        new_model = INN.Sequential(INN.NonlinearResFlow(2), INN.NonlinearResFlow(2))
+        new_model.eval()
+        new_model.load_state_dict(state_dict)
+
+        x_h = new_model(y)
+    
+    def test_original_bn(self):
+        model = spectral_norm(nn.Linear(2, 2))
+        x = torch.ones(10, 2)
+        y = model(x)
+
+        model.eval()
+        state_dict = model.state_dict()
+
+        new_model = spectral_norm(nn.Linear(2, 2))
+        new_model.eval()
+        new_model.load_state_dict(state_dict)
+
+        y = new_model(x)
+    
+    def test_reload_consistent(self):
+        model = INN.Sequential(INN.NonlinearResFlow(2), INN.NonlinearResFlow(2))
+        x = torch.ones(10, 2)
+        y, _, _ = model(x)
+        model.eval()
+        state_dict = model.state_dict()
+
+        new_model = INN.Sequential(INN.NonlinearResFlow(2), INN.NonlinearResFlow(2))
+        new_model.eval()
+        new_model.load_state_dict(state_dict)
+
+        y2,_,_ = new_model(x)
+
+        assert torch.all(y2 == y)
+
+        new_model = INN.Sequential(INN.NonlinearResFlow(2), INN.NonlinearResFlow(2))
+        new_model.eval()
+
+        y2,_,_ = new_model(x)
+
+        assert not torch.all(y2 == y)

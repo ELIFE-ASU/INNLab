@@ -64,7 +64,7 @@ class ResidualFlow(INNModule):
         return x + gx, gx
     
     def jacobian(self, x, N):
-        gx, logdet = MemoryEfficientLogDetEstimator().apply(Jacobian, self.g, x, N)
+        gx, logdet = MemoryEfficientLogDetEstimator.apply(Jacobian, self.g, x, N)
         return logdet
     
     def forward(self, x, log_p=None, log_det=None):
@@ -73,7 +73,7 @@ class ResidualFlow(INNModule):
                 x.requires_grad = True
 
             if self.mem_efficient:
-                gx, logdet = MemoryEfficientLogDetEstimator().apply(Jacobian, self.g, x, self.est_steps, *list(self.g.parameters()))
+                gx, logdet = MemoryEfficientLogDetEstimator.apply(Jacobian, self.g, x, self.est_steps, *list(self.g.parameters()))
             else:
                 gx = self.g(x)
                 logdet = Jacobian(x, gx, N)
