@@ -129,7 +129,8 @@ class SpectralNorm(object):
                     u = u.clone()
                 sv = self.l2norm(module.forward_function(u, weight=weight)) / self.l2norm(u)      
                 sigma = F.relu(sv / self.magnitude - 1.0) + 1.0
-                #module.sigma = sigma
+                # registering sigma as buffer instead of attr so it will shown in
+                # .state_dict() (previous module.sigma = sigma)
                 module.register_buffer('sigma', sigma)
         else:
             sigma = module.sigma

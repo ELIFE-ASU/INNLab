@@ -93,7 +93,8 @@ class TestGoukSigma(unittest.TestCase):
     def test_reload(self):
         model = INN.Sequential(INN.NonlinearResFlow(2), INN.NonlinearResFlow(2))
         x = torch.ones(10, 2)
-        y, _, _ = model(x)
+        for i in range(10):
+            y, _, _ = model(x)
         model.eval()
         state_dict = model.state_dict()
 
@@ -106,7 +107,8 @@ class TestGoukSigma(unittest.TestCase):
     def test_original_bn(self):
         model = spectral_norm(nn.Linear(2, 2))
         x = torch.ones(10, 2)
-        y = model(x)
+        for i in range(10):
+            y = model(x)
 
         model.eval()
         state_dict = model.state_dict()
@@ -120,7 +122,8 @@ class TestGoukSigma(unittest.TestCase):
     def test_reload_consistent(self):
         model = INN.Sequential(INN.NonlinearResFlow(2), INN.NonlinearResFlow(2))
         x = torch.ones(10, 2)
-        y, _, _ = model(x)
+        for i in range(10):
+            y, _, _ = model(x)
         model.eval()
         state_dict = model.state_dict()
 
