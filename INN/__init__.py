@@ -1,4 +1,5 @@
 from INN.INN import *
+import INN as INN
 from .Sequential import Sequential
 from .BatchNorm import BatchNorm1d, BatchNorm2d
 import INN.utilities as utilities

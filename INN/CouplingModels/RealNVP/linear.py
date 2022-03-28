@@ -9,7 +9,7 @@ class NonlinearRealNVP(INNModule):
         self.dim = dim
         
         if f_log_s is None:
-            f_log_s = coupling_utils.default_nonlinear_net(dim, k, activation_fn)
+            f_log_s = coupling_utils.default_nonlinear_net(dim, k, activation_fn, zero=True)
         if f_t is None:
             f_t = coupling_utils.default_nonlinear_net(dim, k, activation_fn)
 
