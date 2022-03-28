@@ -3,9 +3,9 @@ import torch.nn as nn
 
 
 class default_nonlinear_net(nn.Module):
-    def __init__(self, dim, k, activation_fn=None, zero=False):
+    def __init__(self, dim, k, activation_fn=None, scale=0.01):
         super(default_nonlinear_net, self).__init__()
-        self._zero_init = zero
+        self.scale = scale
         self.activation_fn = activation_fn
         self.net = self.default_net(dim, k, activation_fn)
     
@@ -25,10 +25,8 @@ class default_nonlinear_net(nn.Module):
         if type(m) == nn.Linear:
             # doing xavier initialization
             # NOTE: Kaiming initialization will make the output too high, which leads to nan
-            if self._zero_init:
-                torch.nn.init.zeros_(m.weight.data)
-            else:
-                torch.nn.init.xavier_normal_(m.weight.data)
+            torch.nn.init.xavier_normal_(m.weight.data)
+            m.weight.data *= self.scale
             torch.nn.init.zeros_(m.bias.data)
     
     def forward(self, x):
