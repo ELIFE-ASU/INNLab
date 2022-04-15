@@ -88,7 +88,7 @@ class ResizeFeatures(INNAbstract.INNModule):
     '''
     Resize for n-d input, include linear or multi-channel inputs
     '''
-    def __init__(self, feature_in, feature_out, dist='normal', conditional=False):
+    def __init__(self, feature_in, feature_out, dist='normal'):
         super(ResizeFeatures, self).__init__()
         self.feature_in = feature_in
         self.feature_out = feature_out
@@ -99,8 +99,6 @@ class ResizeFeatures(INNAbstract.INNModule):
             self.dist = dist
         
         self.initialized = False
-        self.conditional = conditional
-        self.mu_var = utilities.MuVar(feature_in, feature_out)
     
     def resize(self, x, feature_in, feature_out):
         '''
@@ -125,11 +123,7 @@ class ResizeFeatures(INNAbstract.INNModule):
     def forward(self, x, log_p0=0, log_det_J=0):
         y, z = self.resize(x, self.feature_in, self.feature_out)
         
-        if self.conditional:
-            mu, var, log_det = self.mu_var(y)
-            z = (z - mu) / var
-        else:
-            log_det = 0
+        log_det = 0
         
         if self.compute_p:
             p = self.dist.logp(z)
@@ -143,14 +137,12 @@ class ResizeFeatures(INNAbstract.INNModule):
             1. [feature_in]
             2. [batch_size, feature_in, *]
         '''
-        mu, var, log_det = self.mu_var(y)
 
         if len(y.shape) == 1:
             # [feature_in]
             if y.shape[0] != self.feature_out:
                 raise Exception(f'Expect to get {self.feature_out} features, but got {y.shape[0]}.')
             z = self.dist.sample(self.feature_in-self.feature_out).to(y.device)
-            z = z * var + mu
             y = torch.cat([y, z])
         
         if len(y.shape) >= 2:
@@ -160,7 +152,6 @@ class ResizeFeatures(INNAbstract.INNModule):
             shape = list(y.shape)
             shape[1] = self.feature_in-self.feature_out
             z = self.dist.sample(shape).to(y.device)
-            z = z * var + mu
             y = torch.cat([y, z], dim=1)
         
         return y
