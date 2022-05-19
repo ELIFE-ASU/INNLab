@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import INN.utilities as utilities
 import INN.INNAbstract as INNAbstract
-#import torch.nn.functional as F
+import torch.nn.functional as F
 import INN.pixel_shuffle_1d as ps
 #from ._ResFlow_modules import NonlinearResFlow, Conv2dResFlow, Conv1dResFlow, ResidualFlow
 from .ResFlow import NonlinearResFlow, Conv2dResFlow, Conv1dResFlow, ResidualFlow
