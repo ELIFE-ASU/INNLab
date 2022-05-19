@@ -232,6 +232,9 @@ class Linear2d(Linear1d):
     
     def conv(self, x):
         return F.conv2d(x, self.weight())
+    
+    def inverse(self, y, **args):
+        return F.conv2d(y, self.weight_inv())
 
 
 class Reshape(INNAbstract.INNModule):
