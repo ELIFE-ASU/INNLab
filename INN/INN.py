@@ -179,10 +179,29 @@ def Conv2d(channels, kernel_size, method='NICE', **args):
         return Conv2dRealNVP(channels, kernel_size, **args)
 
 
+class LinearMatrix(nn.Module):
+    def __init__(self, num_feature):
+        super(LinearMatrix, self).__init__()
+        self.M = nn.Parameter(torch.randn(num_feature, num_feature))
+        nn.init.orthogonal_(self.M.data) # orthogonal initialization to ensure non-zero det
+    
+    def W(self):
+        return self.M
+    
+    def inv_W(self):
+        return torch.linalg.inv(self.M)
+    
+    def logdet(self):
+        return torch.log(abs(torch.det(self.M)))
+
+
 class Linear1d(INNAbstract.INNModule):
-    def __init__(self, num_feature, mat=None):
+    def __init__(self, num_feature, mat='matrix'):
         super(Linear1d, self).__init__()
-        if mat is None:
+
+        if mat == 'matrix':
+            self.mat = LinearMatrix(num_feature)
+        elif mat == 'PLU':
             self.mat = utilities.PLUMatrix(num_feature)
         else:
             self.mat = mat
@@ -220,7 +239,7 @@ class Linear1d(INNAbstract.INNModule):
 
 
 class Linear2d(Linear1d):
-    def __init__(self, num_feature, mat=None):
+    def __init__(self, num_feature, mat='matrix'):
         super(Linear2d, self).__init__(num_feature, mat)
     
     def _to_conv_weight(self, m):
