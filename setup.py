@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="INNLab",
-    version="0.8.0",
+    version="0.8.1",
     author="Yanbo Zhang",
     author_email="Zhang.Yanbo@asu.edu",
     description="A package for invertible neural networks",
