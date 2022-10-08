@@ -204,3 +204,6 @@ tensor([[1.0000, 2.0000, 3.0000],
         [7.0000, 8.0000, 9.0000]])
 ```
 
+# License
+
+This work is licensed under a GNU General Public License v3.0
