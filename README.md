@@ -32,6 +32,7 @@ We will not only providing strictly invertible modules, but also including some 
 | ---------------------------- | ------------------------------ | ------------------------------ |
 | Linear vector operator | `nn.Linear(dim, dim)` | `INN.Linear(dim)` |
 | 1-d 1x1 CNN | `nn.Conv1d(channel, channel, kernel_size=1)` | `INN.Linear1d(channel)` |
+|EUNN (efficient unitary neural network)| None|`INN.EUNN(dim)`|
 
 ## Non-linear
 
