@@ -25,7 +25,8 @@ setuptools.setup(
               'INN.CouplingModels.NICEModel',
               'INN.CouplingModels.RealNVP',
               'INN.CouplingModels',
-              'INN.Linears'],
+              'INN.Linears',
+              'INN.EUNN'],
     python_requires=">=3.6",
     test_suite='test',
 )

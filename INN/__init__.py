@@ -11,3 +11,5 @@ from .ResFlow.SpectralNormGouk import spectral_norm, remove_spectral_norm
 
 from . import CouplingModels
 from .CouplingModels import NICEModel, RealNVP
+
+from .EUNN import EUNN, TunableEUNN
