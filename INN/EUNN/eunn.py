@@ -72,6 +72,9 @@ class TunableEUNN(INNModule):
     def get_matrix(self):
         x = torch.eye(self.dim).to(self.theta.device)
         return self.multiplication(x)
+    
+    def __repr__(self):
+        return f'TunableEUNN(dim={self.dim}, deepth={self.deepth}, complex_space={self.complex_space})'
 
 def EUNN(dim, deepth=None, complex_space=False, method='tunable'):
     if not method in ['tunable']:
