@@ -49,8 +49,11 @@ class TunableEUNN(INNModule):
         self.ind1 = _make_ind1(dim)
         self.ind2 = _make_ind2(dim)
     
+    def multiplication(self, x):
+        return unitary(x, self.theta, self.ind1, self.ind2, phis=self.phi, complex_space=self.complex_space)
+    
     def forward(self, x, log_p=None, log_det=None):
-        y = unitary(x, self.theta, self.ind1, self.ind2, phis=self.phi, complex_space=self.complex_space)
+        y = self.multiplication(x)
 
         if self.compute_p:
             return y, log_p, log_det
@@ -67,8 +70,8 @@ class TunableEUNN(INNModule):
         return x
     
     def get_matrix(self):
-        x = torch.eye(self.dim)
-        return self.forward(x)
+        x = torch.eye(self.dim).to(self.theta.device)
+        return self.multiplication(x)
 
 def EUNN(dim, deepth=None, complex_space=False, method='tunable'):
     if not method in ['tunable']:
