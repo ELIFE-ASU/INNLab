@@ -34,41 +34,6 @@ The package requires PyTorch >= 1.8.0. If it is lower than it, you will not be a
 
 # Examples
 
-## Sequential
-
-```python
-import INN
-import torch
-
-model = INN.Sequential(INN.Nonlinear(3, method='RealNVP'),
-                       INN.BatchNorm1d(3),
-                       INN.Linear(3))
-model.eval()
-
-x = torch.Tensor([[1,2,3],
-                  [4,5,6],
-                  [7,8,9]])
-
-y, logp, logdet = model(x)
-print(y)
-
-x_hat = model.inverse(y)
-print(x_hat)
-```
-
-Outputs:
-
-```
-# y = model(x)
-tensor([[ -4.9253,   1.0349,  -0.1721],
-        [-18.1465,   5.9512,  -2.1945],
-        [-29.2788,  10.0235,  -2.2862]], grad_fn=<MmBackward>)
-# x_hat = model.inverse(y)
-tensor([[1.0000, 2.0000, 3.0000],
-        [4.0000, 5.0000, 6.0000],
-        [7.0000, 8.0000, 9.0000]], grad_fn=<AddBackward0>)
-```
-
 ## Resize
 
 The `INN.ResizeFeatures` method will simple abandon some features. When doing inverse, the abandoned information will be replaced by sampled number. 
