@@ -20,39 +20,7 @@ We will not only providing strictly invertible modules, but also including some 
 
 # Analogy to PyTorch
 
-## Container
-
-| Module     | PyTorch                   | INNLab                     |
-| ---------- | ------------------------- | -------------------------- |
-| Sequential | `nn.Sequential(*modules)` | `INN.Sequential(*modules)` |
-
-## Linear
-
-| Module                | PyTorch               | INNLab               |
-| ---------------------------- | ------------------------------ | ------------------------------ |
-| Linear vector operator | `nn.Linear(dim, dim)` | `INN.Linear(dim)` |
-| 1-d 1x1 CNN | `nn.Conv1d(channel, channel, kernel_size=1)` | `INN.Linear1d(channel)` |
-|EUNN (efficient unitary neural network)| None|`INN.EUNN(dim)`|
-
-## Non-linear
-
-| Module                     | PyTorch                                                 | INNLab                             |
-| -------------------------- | ------------------------------------------------------- | ---------------------------------- |
-| Non-linear vector operator | `nn.Linear(dim, dim)` + non-linear                      | `INN.Nonlinear(dim)`               |
-| Non-linear 1-d CNN         | `nn.Conv1d(channel, channel, kernel_size)` + non-linear | `INN.Conv1d(channel, kernel_size)` |
-| Non-linear 2-d CNN         | `nn.Conv2d(channel, channel, kernel_size)`+ non-linear  | `INN.Conv2d(channel, kernel_size)` |
-
-## Normalization
-
-| Module                 | PyTorch                        | INNLab                         |
-| ---------------------- | ------------------------------ | ------------------------------ |
-| 1d Batch Normalization | `nn.BatchNorm1d(num_features)` | `INN.BatchNorm1d(num_feature)` |
-
-## Other
-
-| Module | PyTorch                              | INNLab                                        |
-| ------ | ------------------------------------ | --------------------------------------------- |
-| Resize | Included in `nn.Linear` or `nn.Conv` | `INN.ResizeFeatures(feature_in, feature_out)` |
+INNLab using the simular format as PyTorch, so users can getting start with easier. See documents here: [Analogy to PyTorch](https://github.com/ELIFE-ASU/INNLab/wiki/Analogy-to-PyTorch)
 
 # Install
 
