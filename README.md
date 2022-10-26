@@ -18,10 +18,6 @@ We will not only providing strictly invertible modules, but also including some 
 * (developing) Noisy kernels: for increasing the representation power
 * (developing) InfoGAN: the network **not restricted at all**, and you can control the distribution of the embedding. However, invertibility is not guaranteed. Sampling may also have problem of mode collapse.
 
-# Analogy to PyTorch
-
-INNLab using the simular format as PyTorch, so users can getting start with easier. See documents here: [Analogy to PyTorch](https://github.com/ELIFE-ASU/INNLab/wiki/Analogy-to-PyTorch)
-
 # Install
 
 In the project folder, run:
@@ -35,6 +31,8 @@ The package requires PyTorch >= 1.8.0. If it is lower than it, you will not be a
 # Documentation
 
 See [INNLab Wiki - Home](https://github.com/ELIFE-ASU/INNLab/wiki)
+
+INNLab using the simular format as PyTorch, so users can getting start with easier. See documents here: [Analogy to PyTorch](https://github.com/ELIFE-ASU/INNLab/wiki/Analogy-to-PyTorch)
 
 # License
 
