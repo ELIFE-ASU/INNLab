@@ -13,10 +13,7 @@ INNLab is a Python package that provides easy access of using Invertible Neural 
 
 * Other supporting blocks (resize, reshape, invertible batchnrom, invertible pixel shuffle, etc.)
 
-We will not only providing strictly invertible modules, but also including some semi-invertible modules:
-
-* (developing) Noisy kernels: for increasing the representation power
-* (developing) InfoGAN: the network **not restricted at all**, and you can control the distribution of the embedding. However, invertibility is not guaranteed. Sampling may also have problem of mode collapse.
+> This package is used in this paper: Yanbo Zhang, and Sara Imari Walker. "A Relational Macrostate Theory Guides Artificial Intelligence to Learn Macro and Design Micro." arXiv preprint arXiv:2210.07374 (2022). https://arxiv.org/abs/2210.07374
 
 # Install
 
