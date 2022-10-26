@@ -32,41 +32,9 @@ python setup.py install
 
 The package requires PyTorch >= 1.8.0. If it is lower than it, you will not be able to use `INN.PixelShuffle2d`.
 
-# Examples
+# Documentation
 
-## Resize
-
-The `INN.ResizeFeatures` method will simple abandon some features. When doing inverse, the abandoned information will be replaced by sampled number. 
-
-```python
-import INN
-import torch
-
-model = INN.ResizeFeatures(feature_in=3, feature_out=1)
-
-x = torch.Tensor([[1,2,3],
-                  [4,5,6],
-                  [7,8,9]])
-
-y, logp, logdet = model(x)
-print(y)
-
-x_hat = model.inverse(y)
-print(x_hat)
-```
-
-Output:
-
-```
-# y = model(x)
-tensor([[1.],
-        [4.],
-        [7.]])
-# x_hat = model.inverse(y)
-tensor([[ 1.0000,  1.5800, -0.6237],
-        [ 4.0000,  0.5238,  0.3988],
-        [ 7.0000,  1.0111, -0.0900]])
-```
+See [INNLab Wiki - Home](https://github.com/ELIFE-ASU/INNLab/wiki)
 
 # License
 
