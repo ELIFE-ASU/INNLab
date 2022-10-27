@@ -5,13 +5,7 @@
 
 [![](https://img.shields.io/static/v1?label=pytorch&message=≥1.8.0&color=yellow)](https://pytorch.org)
 
-INNLab is a Python package that provides easy access of using Invertible Neural Networks (INNs). In this package, we included following INN practices:
-
-* NICE
-* RealNVP
-* Residual Flow
-
-* Other supporting blocks (resize, reshape, invertible batchnrom, invertible pixel shuffle, etc.)
+INNLab is a Python package that provides easy access of using Invertible Neural Networks (INNs). In this package, we included INN practice like NICE, RealNVP and Residual Flow. Other supporting blocks (resize, reshape, invertible batchnrom, invertible pixel shuffle, etc.) are also included for easier implementation.
 
 > This package is used in this paper: Yanbo Zhang, and Sara Imari Walker. "A Relational Macrostate Theory Guides Artificial Intelligence to Learn Macro and Design Micro." arXiv preprint arXiv:2210.07374 (2022). https://arxiv.org/abs/2210.07374
 
