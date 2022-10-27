@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 
 
-![](https://img.shields.io/static/v1?label=pytorch&message=≥1.6&color=yellow)
+![](https://img.shields.io/static/v1?label=pytorch&message=≥1.8.0&color=yellow)
 
 INNLab is a Python package that provides easy access of using Invertible Neural Networks (INNs). In this package, we included following INN practices:
 
