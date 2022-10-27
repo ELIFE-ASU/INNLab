@@ -17,9 +17,11 @@ INNLab is a Python package that provides easy access of using Invertible Neural 
 
 # Install
 
-In the project folder, run:
+In the project folder, run the following commands step-by-step:
 
 ```bash
+git clone https://github.com/ELIFE-ASU/INNLab
+cd INNLab/
 python setup.py install
 ```
 
