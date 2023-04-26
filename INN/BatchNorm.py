@@ -66,9 +66,9 @@ class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
         return x
 
 class BatchNorm2d(nn.BatchNorm2d, INNAbstract.INNModule):
-    def __init__(self, dim, requires_grad=True):
+    def __init__(self, dim, requires_grad=True, eps=1e-05, momentum=0.01):
         INNAbstract.INNModule.__init__(self)
-        nn.BatchNorm2d.__init__(self, num_features=dim, affine=False)
+        nn.BatchNorm2d.__init__(self, num_features=dim, affine=False, eps=eps, momentum=momentum)
         self.requires_grad = requires_grad
     
     def _scale(self, x):
