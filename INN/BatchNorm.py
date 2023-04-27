@@ -3,12 +3,17 @@ import torch.nn as nn
 from . import INNAbstract
 
 
-class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
+class BatchNorm1d(INNAbstract.INNModule):
     def __init__(self, dim, requires_grad=True, eps=1e-05, momentum=0.01):
         INNAbstract.INNModule.__init__(self)
-        nn.BatchNorm1d.__init__(self, num_features=dim, affine=False, eps=eps, momentum=momentum)
+        self.momentum = momentum
+        self.eps = eps
         self.requires_grad = requires_grad
-    
+        self.num_features = dim
+
+        self.running_mean = torch.zeros(dim)
+        self.running_var = torch.ones(dim)
+
     def _scale(self, x):
         '''The scale factor of x to compute Jacobian'''
         if len(x.shape) == 2:
@@ -18,13 +23,14 @@ class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
         for dim in x.shape[2:]:
             s *= dim
         return s
-    
+
     def var(self, x):
-        x_ = x.transpose(0,1).contiguous().view(self.num_features, -1)
+        # using custom var function to get consistent results in both training and eval
+        x_ = x.transpose(0, 1).contiguous().view(self.num_features, -1)
         return x_.var(1, unbiased=False)
-    
+
     def mean(self, x):
-        return x.transpose(0,1).contiguous().view(self.num_features, -1).mean(1)
+        return x.transpose(0, 1).contiguous().view(self.num_features, -1).mean(1)
 
     def forward(self, x, log_p=0, log_det_J=0):
         '''
@@ -34,14 +40,23 @@ class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
         if self.compute_p:
             if not self.training:
                 # if in self.eval()
-                var = self.running_var # [dim]
+                x = (x - self.running_mean) / \
+                    torch.sqrt(self.running_var + self.eps)
+                var = self.running_var
             else:
                 # if in training
                 var = self.var(x)
+                mean = self.mean(x)
                 if not self.requires_grad:
                     var = var.detach()
+                    mean = mean.detach()
 
-            x = super(BatchNorm1d, self).forward(x)
+                x = (x - mean) / torch.sqrt(var + self.eps)
+                # update running mean and var
+                self.running_mean = (
+                    1 - self.momentum) * self.running_mean + self.momentum * mean.detach()
+                self.running_var = (1 - self.momentum) * \
+                    self.running_var + self.momentum * var.detach()
 
             log_det = -0.5 * torch.log(var + self.eps)
             log_det = torch.sum(log_det, dim=-1) * self._scale(x)
@@ -49,7 +64,7 @@ class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
             return x, log_p, log_det_J + log_det.repeat(x.shape[0])
         else:
             return super(BatchNorm1d, self).forward(x)
-    
+
     def inverse(self, y, **args):
         '''
         inverse y to un-batch-normed numbers
@@ -65,12 +80,14 @@ class BatchNorm1d(nn.BatchNorm1d, INNAbstract.INNModule):
         x = y * torch.sqrt(var) + mean
         return x
 
+
 class BatchNorm2d(nn.BatchNorm2d, INNAbstract.INNModule):
     def __init__(self, dim, requires_grad=True, eps=1e-05, momentum=0.01):
         INNAbstract.INNModule.__init__(self)
-        nn.BatchNorm2d.__init__(self, num_features=dim, affine=False, eps=eps, momentum=momentum)
+        nn.BatchNorm2d.__init__(self, num_features=dim,
+                                affine=False, eps=eps, momentum=momentum)
         self.requires_grad = requires_grad
-    
+
     def _scale(self, x):
         '''The scale factor of x to compute Jacobian'''
         if len(x.shape) == 2:
@@ -80,12 +97,12 @@ class BatchNorm2d(nn.BatchNorm2d, INNAbstract.INNModule):
         for dim in x.shape[2:]:
             s *= dim
         return s
-    
+
     def var(self, x):
-        return x.transpose(0,1).contiguous().view(self.num_features, -1).var(1, unbiased=False)
-    
+        return x.transpose(0, 1).contiguous().view(self.num_features, -1).var(1, unbiased=False)
+
     def mean(self, x):
-        return x.transpose(0,1).contiguous().view(self.num_features, -1).mean(1)
+        return x.transpose(0, 1).contiguous().view(self.num_features, -1).mean(1)
 
     def forward(self, x, log_p=0, log_det_J=0):
         '''
@@ -95,7 +112,7 @@ class BatchNorm2d(nn.BatchNorm2d, INNAbstract.INNModule):
         if self.compute_p:
             if not self.training:
                 # if in self.eval()
-                var = self.running_var # [dim]
+                var = self.running_var  # [dim]
             else:
                 # if in training
                 var = self.var(x)
@@ -110,7 +127,7 @@ class BatchNorm2d(nn.BatchNorm2d, INNAbstract.INNModule):
             return x, log_p, log_det_J + log_det.repeat(x.shape[0])
         else:
             return super(BatchNorm2d, self).forward(x)
-    
+
     def inverse(self, y, **args):
         '''
         inverse y to un-batch-normed numbers
