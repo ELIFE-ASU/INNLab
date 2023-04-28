@@ -11,8 +11,8 @@ class BatchNorm1d(INNAbstract.INNModule):
         self.requires_grad = requires_grad
         self.num_features = dim
 
-        self.running_mean = torch.zeros(dim)
-        self.running_var = torch.ones(dim)
+        self.register_buffer('running_mean', torch.zeros(dim))
+        self.register_buffer('running_var', torch.ones(dim))
 
     def _scale(self, x):
         '''The scale factor of x to compute Jacobian'''
@@ -31,6 +31,28 @@ class BatchNorm1d(INNAbstract.INNModule):
 
     def mean(self, x):
         return x.transpose(0, 1).contiguous().view(self.num_features, -1).mean(1)
+    
+    def batch_norm_forward(self, x):
+        if not self.training:
+                # if in self.eval()
+                x = (x - self.running_mean) / \
+                    torch.sqrt(self.running_var + self.eps)
+                var = self.running_var
+                mean = self.running_mean
+        else:
+            var = self.var(x)
+            mean = self.mean(x)
+            if not self.requires_grad:
+                var = var.detach()
+                mean = mean.detach()
+
+            x = (x - mean) / torch.sqrt(var + self.eps)
+            # update running mean and var
+            self.running_mean = (
+                1 - self.momentum) * self.running_mean + self.momentum * mean.detach()
+            self.running_var = (1 - self.momentum) * \
+                self.running_var + self.momentum * var.detach()
+        return x, var, mean
 
     def forward(self, x, log_p=0, log_det_J=0):
         '''
@@ -38,32 +60,15 @@ class BatchNorm1d(INNAbstract.INNModule):
         x.shape = [batch_size, dim, *]
         '''
         if self.compute_p:
-            if not self.training:
-                # if in self.eval()
-                x = (x - self.running_mean) / \
-                    torch.sqrt(self.running_var + self.eps)
-                var = self.running_var
-            else:
-                # if in training
-                var = self.var(x)
-                mean = self.mean(x)
-                if not self.requires_grad:
-                    var = var.detach()
-                    mean = mean.detach()
-
-                x = (x - mean) / torch.sqrt(var + self.eps)
-                # update running mean and var
-                self.running_mean = (
-                    1 - self.momentum) * self.running_mean + self.momentum * mean.detach()
-                self.running_var = (1 - self.momentum) * \
-                    self.running_var + self.momentum * var.detach()
+            x, var, mean = self.batch_norm_forward(x)
 
             log_det = -0.5 * torch.log(var + self.eps)
             log_det = torch.sum(log_det, dim=-1) * self._scale(x)
 
             return x, log_p, log_det_J + log_det.repeat(x.shape[0])
         else:
-            return super(BatchNorm1d, self).forward(x)
+            x, var, mean = self.batch_norm_forward(x)
+            return x
 
     def inverse(self, y, **args):
         '''
