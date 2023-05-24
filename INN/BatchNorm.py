@@ -11,8 +11,8 @@ class BatchNorm1d(INNAbstract.INNModule):
         self.requires_grad = requires_grad
         self.num_features = dim
 
-        self.register_buffer('running_mean', torch.zeros(dim))
-        self.register_buffer('running_var', torch.ones(dim))
+        self.register_buffer('running_mean', torch.zeros(1, dim))
+        self.register_buffer('running_var', torch.ones(1, dim))
 
     def _scale(self, x):
         '''The scale factor of x to compute Jacobian'''
@@ -35,8 +35,10 @@ class BatchNorm1d(INNAbstract.INNModule):
     def batch_norm_forward(self, x):
         if not self.training:
                 # if in self.eval()
-                x = (x - self.running_mean) / \
-                    torch.sqrt(self.running_var + self.eps)
+                if len(x.shape) == 2:
+                    x = (x - self.running_mean.reshape(1, -1)) / torch.sqrt(self.running_var.reshape(1, -1) + self.eps)
+                elif len(x.shape) == 3:
+                    x = (x - self.running_mean.reshape(1, -1, 1)) / torch.sqrt(self.running_var.reshape(1, -1, 1) + self.eps)
                 var = self.running_var
                 mean = self.running_mean
         else:
