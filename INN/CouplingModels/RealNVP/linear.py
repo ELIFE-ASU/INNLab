@@ -4,15 +4,14 @@ from .. import utils as coupling_utils
 
 
 class NonlinearRealNVP(INNModule):
-    def __init__(self, dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1, activation_fn=None, scale=0.01):
+    def __init__(self, dim=None, f_log_s=None, f_t=None, k=4, mask=None, clip=1, activation_fn=None):
         super(NonlinearRealNVP, self).__init__()
         self.dim = dim
         
         if f_log_s is None:
-            f_log_s = coupling_utils.default_nonlinear_net(dim, k, activation_fn, scale=scale)
+            f_log_s = coupling_utils.default_nonlinear_net(dim, k, activation_fn, initialization='zero')
         if f_t is None:
-            f_t = coupling_utils.default_nonlinear_net(dim, k, activation_fn, scale=scale*10)
-
+            f_t = coupling_utils.default_nonlinear_net(dim, k, activation_fn, initialization='kaiming')
         self.net = utils.combined_real_nvp(dim, f_log_s, f_t, mask, clip)
     
     def forward(self, x, log_p0=0, log_det_J_=0):

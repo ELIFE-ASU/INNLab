@@ -3,9 +3,8 @@ import torch.nn as nn
 
 
 class default_nonlinear_net(nn.Module):
-    def __init__(self, dim, k, activation_fn=None, scale=0.01, initialization='kaiming'):
+    def __init__(self, dim, k, activation_fn=None, initialization='kaiming'):
         super(default_nonlinear_net, self).__init__()
-        self.scale = scale
         self.activation_fn = activation_fn
         self.net = self.default_net(dim, k, activation_fn, initialization)
     
