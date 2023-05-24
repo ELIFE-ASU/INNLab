@@ -3,30 +3,38 @@ import torch.nn as nn
 
 
 class default_nonlinear_net(nn.Module):
-    def __init__(self, dim, k, activation_fn=None, scale=0.01):
+    def __init__(self, dim, k, activation_fn=None, scale=0.01, initialization='kaiming'):
         super(default_nonlinear_net, self).__init__()
         self.scale = scale
         self.activation_fn = activation_fn
-        self.net = self.default_net(dim, k, activation_fn)
+        self.net = self.default_net(dim, k, activation_fn, initialization)
     
-    def default_net(self, dim, k, activation_fn):
+    def default_net(self, dim, k, activation_fn, initialization):
+        assert initialization in ['kaiming', 'zero']
+
         if activation_fn == None:
-            ac = nn.SELU#nn.LeakyReLU
+            ac = nn.SELU
         else:
             ac = activation_fn
         
         block = nn.Sequential(nn.Linear(dim, k * dim), ac(),
                               nn.Linear(k * dim, k * dim), ac(),
                               nn.Linear(k * dim, dim))
-        block.apply(self.init_weights)
+        if initialization == 'kaiming':
+            block.apply(self.init_weights_kaiming)
+        elif initialization == 'zero':
+            block.apply(self.init_weights_zero)
+
         return block
     
-    def init_weights(self, m):
+    def init_weights_kaiming(self, m):
         if type(m) == nn.Linear:
-            # doing xavier initialization
-            # NOTE: Kaiming initialization will make the output too high, which leads to nan
-            torch.nn.init.xavier_normal_(m.weight.data)
-            m.weight.data *= self.scale
+            torch.nn.init.kaiming_normal_(m.weight.data, nonlinearity='selu')
+            torch.nn.init.zeros_(m.bias.data)
+    
+    def init_weights_zero(self, m):
+        if type(m) == nn.Linear:
+            torch.nn.init.zeros_(m.weight.data)
             torch.nn.init.zeros_(m.bias.data)
     
     def forward(self, x):
