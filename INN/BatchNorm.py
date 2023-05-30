@@ -50,10 +50,12 @@ class BatchNorm1d(INNAbstract.INNModule):
 
             x = (x - mean) / torch.sqrt(var + self.eps)
             # update running mean and var
-            self.running_mean = (
+            running_mean = (
                 1 - self.momentum) * self.running_mean + self.momentum * mean.detach()
-            self.running_var = (1 - self.momentum) * \
+            running_var = (1 - self.momentum) * \
                 self.running_var + self.momentum * var.detach()
+            self.running_mean.copy_(running_mean)
+            self.running_var.copy_(running_var)
         return x, var, mean
 
     def forward(self, x, log_p=0, log_det_J=0):
