@@ -33,7 +33,7 @@ class default_nonlinear_net(nn.Module):
     
     def init_weights_zero(self, m):
         if type(m) == nn.Linear:
-            torch.nn.init.zeros_(m.weight.data)
+            torch.nn.init.xavier_uniform_(m.weight.data, gain=0.1) # use a lower gain to avoid nan
             torch.nn.init.zeros_(m.bias.data)
     
     def forward(self, x):
