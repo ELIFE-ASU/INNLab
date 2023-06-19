@@ -6,9 +6,11 @@ from . import utils
 
 class LinearNICE(NICE):
 
-    def __init__(self, dim=None, m=None, mask=None, k=4, activation_fn=None):
-        if m is None:
+    def __init__(self, dim=None, f_t=None, mask=None, k=4, activation_fn=None, **args):
+        if f_t is None:
             m_ = utils.default_net(dim, k, activation_fn)
+        else:
+            m_ = f_t
         super(LinearNICE, self).__init__(dim, m=m_, mask=mask)
     
     def forward(self, x, log_p0=0, log_det_J=0):
